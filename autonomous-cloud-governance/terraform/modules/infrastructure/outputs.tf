@@ -13,9 +13,29 @@ output "private_subnet_ids" {
   value       = [aws_subnet.private_1.id, aws_subnet.private_2.id]
 }
 
-output "app_public_ip" {
-  description = "EC2 Public IP — เปิดเว็บได้ที่ http://<ip>:5000"
-  value       = aws_eip.app.public_ip
+output "web_sg_id" {
+  description = "Web Security Group ID"
+  value       = aws_security_group.web.id
+}
+
+output "app_sg_id" {
+  description = "App Security Group ID"
+  value       = aws_security_group.app.id
+}
+
+output "db_sg_id" {
+  description = "DB Security Group ID"
+  value       = aws_security_group.db.id
+}
+
+output "lambda_sg_id" {
+  description = "Lambda Security Group ID"
+  value       = aws_security_group.lambda.id
+}
+
+output "alb_dns_name" {
+  description = "ALB DNS Name"
+  value       = aws_lb.main.dns_name
 }
 
 output "dynamodb_table_name" {

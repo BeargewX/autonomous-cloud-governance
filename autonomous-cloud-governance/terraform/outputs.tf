@@ -13,9 +13,9 @@ output "private_subnet_ids" {
   value       = module.infrastructure.private_subnet_ids
 }
 
-output "app_public_ip" {
-  description = "EC2 Public IP"
-  value       = module.infrastructure.app_public_ip
+output "alb_dns_name" {
+  description = "ALB DNS Name — เอาไว้เปิดเว็บ"
+  value       = module.infrastructure.alb_dns_name
 }
 
 output "dynamodb_table_name" {
