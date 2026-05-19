@@ -1,14 +1,14 @@
 # Zip Lambda functions
 data "archive_file" "self_healing" {
   type        = "zip"
-  source_file = "${path.module}/../../../lambda/self_healing.py"
-  output_path = "${path.module}/../../../lambda/self_healing.zip"
+  source_file = "${path.root}/../../lambda/self_healing.py"
+  output_path = "${path.root}/../../lambda/self_healing.zip"
 }
 
 data "archive_file" "finops" {
   type        = "zip"
-  source_file = "${path.module}/../../../lambda/finops.py"
-  output_path = "${path.module}/../../../lambda/finops.zip"
+  source_file = "${path.root}/../../lambda/finops.py"
+  output_path = "${path.root}/../../lambda/finops.zip"
 }
 
 # IAM Role สำหรับ Lambda
