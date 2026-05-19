@@ -77,13 +77,14 @@ resource "aws_iam_role_policy" "lambda_policy" {
 }
 
 # Lambda Self-Healing
+# Lambda Self-Healing
 resource "aws_lambda_function" "self_healing" {
-  filename         = data.archive_file.self_healing.output_path
+  filename         = "${path.module}/lambda/self_healing.zip"
   function_name    = "${var.project_name}-self-healing"
   role             = aws_iam_role.lambda_role.arn
   handler          = "self_healing.lambda_handler"
   runtime          = "python3.11"
-  source_code_hash = data.archive_file.self_healing.output_base64sha256
+  source_code_hash = filebase64sha256("${path.module}/lambda/self_healing.zip")
   timeout          = 60
 
   environment {
@@ -100,12 +101,12 @@ resource "aws_lambda_function" "self_healing" {
 
 # Lambda FinOps
 resource "aws_lambda_function" "finops" {
-  filename         = data.archive_file.finops.output_path
+  filename         = "${path.module}/lambda/finops.zip"
   function_name    = "${var.project_name}-finops"
   role             = aws_iam_role.lambda_role.arn
   handler          = "finops.lambda_handler"
   runtime          = "python3.11"
-  source_code_hash = data.archive_file.finops.output_base64sha256
+  source_code_hash = filebase64sha256("${path.module}/lambda/finops.zip")
   timeout          = 300
 
   environment {
