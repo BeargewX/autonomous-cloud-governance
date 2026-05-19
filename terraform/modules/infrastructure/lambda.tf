@@ -1,16 +1,3 @@
-# Zip Lambda functions
-data "archive_file" "self_healing" {
-  type        = "zip"
-  source_file = "${path.root}/../../lambda/self_healing.py"
-  output_path = "${path.root}/../../lambda/self_healing.zip"
-}
-
-data "archive_file" "finops" {
-  type        = "zip"
-  source_file = "${path.root}/../../lambda/finops.py"
-  output_path = "${path.root}/../../lambda/finops.zip"
-}
-
 # IAM Role สำหรับ Lambda
 resource "aws_iam_role" "lambda_role" {
   name = "${var.project_name}-lambda-role"
