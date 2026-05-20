@@ -4,19 +4,19 @@ resource "aws_vpc" "main" {
   enable_dns_hostnames = true
   enable_dns_support   = true
 
-  tags = {
+  tags = merge(var.common_tags, {
     Name        = "${var.project_name}-vpc"
     Environment = var.environment
-  }
+  })
 }
 
 # Internet Gateway
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
 
-  tags = {
+  tags = merge(var.common_tags, {
     Name = "${var.project_name}-igw"
-  }
+  })
 }
 
 # Public Subnets
@@ -24,22 +24,22 @@ resource "aws_subnet" "public_1" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = "10.0.1.0/24"
   availability_zone       = "${var.aws_region}a"
-  map_public_ip_on_launch = true
+  map_public_ip_on_launch = var.enable_public_ipv4
 
-  tags = {
+  tags = merge(var.common_tags, {
     Name = "${var.project_name}-public-1"
-  }
+  })
 }
 
 resource "aws_subnet" "public_2" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = "10.0.2.0/24"
   availability_zone       = "${var.aws_region}b"
-  map_public_ip_on_launch = true
+  map_public_ip_on_launch = var.enable_public_ipv4
 
-  tags = {
+  tags = merge(var.common_tags, {
     Name = "${var.project_name}-public-2"
-  }
+  })
 }
 
 # Private Subnets
@@ -48,9 +48,9 @@ resource "aws_subnet" "private_1" {
   cidr_block        = "10.0.3.0/24"
   availability_zone = "${var.aws_region}a"
 
-  tags = {
+  tags = merge(var.common_tags, {
     Name = "${var.project_name}-private-1"
-  }
+  })
 }
 
 resource "aws_subnet" "private_2" {
@@ -58,9 +58,9 @@ resource "aws_subnet" "private_2" {
   cidr_block        = "10.0.4.0/24"
   availability_zone = "${var.aws_region}b"
 
-  tags = {
+  tags = merge(var.common_tags, {
     Name = "${var.project_name}-private-2"
-  }
+  })
 }
 
 # Public Route Table
@@ -72,18 +72,18 @@ resource "aws_route_table" "public" {
     gateway_id = aws_internet_gateway.main.id
   }
 
-  tags = {
+  tags = merge(var.common_tags, {
     Name = "${var.project_name}-public-rt"
-  }
+  })
 }
 
 # Private Route Table
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
 
-  tags = {
+  tags = merge(var.common_tags, {
     Name = "${var.project_name}-private-rt"
-  }
+  })
 }
 
 # Route Table Associations
@@ -134,9 +134,9 @@ resource "aws_security_group" "web" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = {
+  tags = merge(var.common_tags, {
     Name = "${var.project_name}-web-sg"
-  }
+  })
 }
 
 resource "aws_security_group" "app" {
@@ -151,11 +151,15 @@ resource "aws_security_group" "app" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+  dynamic "ingress" {
+    for_each = var.enable_public_ssh ? [1] : []
+
+    content {
+      from_port   = 22
+      to_port     = 22
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
   }
 
   egress {
@@ -165,9 +169,9 @@ resource "aws_security_group" "app" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = {
+  tags = merge(var.common_tags, {
     Name = "${var.project_name}-app-sg"
-  }
+  })
 }
 
 resource "aws_security_group" "db" {
@@ -189,9 +193,9 @@ resource "aws_security_group" "db" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = {
+  tags = merge(var.common_tags, {
     Name = "${var.project_name}-db-sg"
-  }
+  })
 }
 
 resource "aws_security_group" "lambda" {
@@ -206,19 +210,25 @@ resource "aws_security_group" "lambda" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = {
+  tags = merge(var.common_tags, {
     Name = "${var.project_name}-lambda-sg"
-  }
+  })
 }
 
 # VPC Flow Logs
 resource "aws_cloudwatch_log_group" "vpc_flow_logs" {
+  count             = var.enable_vpc_flow_logs ? 1 : 0
   name              = "/aws/vpc/flow-logs/${var.project_name}"
   retention_in_days = 7
+
+  tags = merge(var.common_tags, {
+    Name = "${var.project_name}-vpc-flow-logs"
+  })
 }
 
 resource "aws_iam_role" "vpc_flow_logs" {
-  name = "${var.project_name}-vpc-flow-logs-role"
+  count = var.enable_vpc_flow_logs ? 1 : 0
+  name  = "${var.project_name}-vpc-flow-logs-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -230,11 +240,16 @@ resource "aws_iam_role" "vpc_flow_logs" {
       }
     }]
   })
+
+  tags = merge(var.common_tags, {
+    Name = "${var.project_name}-vpc-flow-logs-role"
+  })
 }
 
 resource "aws_iam_role_policy" "vpc_flow_logs" {
-  name = "${var.project_name}-vpc-flow-logs-policy"
-  role = aws_iam_role.vpc_flow_logs.id
+  count = var.enable_vpc_flow_logs ? 1 : 0
+  name  = "${var.project_name}-vpc-flow-logs-policy"
+  role  = aws_iam_role.vpc_flow_logs[0].id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -253,8 +268,13 @@ resource "aws_iam_role_policy" "vpc_flow_logs" {
 }
 
 resource "aws_flow_log" "main" {
-  iam_role_arn    = aws_iam_role.vpc_flow_logs.arn
-  log_destination = aws_cloudwatch_log_group.vpc_flow_logs.arn
+  count           = var.enable_vpc_flow_logs ? 1 : 0
+  iam_role_arn    = aws_iam_role.vpc_flow_logs[0].arn
+  log_destination = aws_cloudwatch_log_group.vpc_flow_logs[0].arn
   traffic_type    = "ALL"
   vpc_id          = aws_vpc.main.id
+
+  tags = merge(var.common_tags, {
+    Name = "${var.project_name}-vpc-flow-log"
+  })
 }

@@ -1,6 +1,6 @@
 # Project Status
 
-Status: demo ready
+Status: demo-ready and free-first
 
 Date: May 2026
 
@@ -8,54 +8,66 @@ Date: May 2026
 
 - Terraform Cloud remote deployment
 - Modular Terraform infrastructure
-- VPC, public/private subnets, route tables, security groups
+- VPC, subnets, route tables, security groups
 - EC2 application host
 - Flask API service
+- Mock/local API mode
 - DynamoDB incident log table
 - SNS alerts topic
 - CloudWatch metrics and alarm integration
 - EventBridge rules for self-healing triggers
 - Lambda functions for self-healing and FinOps flows
 - Electron desktop dashboard
+- Configurable dashboard backend URL
 - GitHub Actions CI/CD workflow
+- Cost safety documentation
+- Test/demo scripts
+- Governance scorecard
+- Policy checks
+- Drift detector
+- Incident prioritizer
+- Markdown report generator
 
-## Verified Demo Flows
+## Free-First Improvements
 
-- Terraform apply completes successfully
-- Flask health endpoint responds
-- EC2 status can be read through the API
-- CPU data can be requested from CloudWatch
-- Incidents can be read from DynamoDB
-- Lambda stats can be read from CloudWatch
-- Electron app can consume the Flask API
+- `APP_MODE=mock` is the local default
+- dashboard defaults to `http://127.0.0.1:5000`
+- public IPv4 is controlled by `enable_public_ipv4`
+- public SSH is controlled by `enable_public_ssh`
+- VPC Flow Logs are controlled by `enable_vpc_flow_logs`
+- EC2 T3 CPU credits are set to `standard`
+- `terraform/free.tfvars.example` documents the after-demo low-cost posture
 
-## Evidence To Capture
+## Verified Locally
 
-For final submission, capture screenshots of:
+- Python files compile
+- Electron preload/main JavaScript syntax passes
+- Terraform format check passes
+- Terraform validate passes
+- PowerShell scripts parse
+- Cost-risk script runs
+- Dashboard static preview has no encoding errors
 
-- Block diagram
-- GitHub Actions workflow run
-- Terraform Cloud successful apply
-- AWS EC2 instance
-- DynamoDB incident table
-- Lambda functions
-- CloudWatch alarm or metrics
-- EventBridge rules
-- Electron dashboard
+## Still To Verify On Your Machine
+
+- `.\scripts\start-local.ps1 -Mode mock`
+- `.\scripts\demo-health-check.ps1 -BaseUrl http://127.0.0.1:5000`
+- `.\scripts\start-dashboard.ps1 -BaseUrl http://127.0.0.1:5000`
+- `.\scripts\export-report.ps1 -BaseUrl http://127.0.0.1:5000`
+- GitHub Actions after push
+- Terraform Cloud plan after commit
+- Live AWS endpoint when intentionally enabled
 
 ## Known Notes
 
-- The HCP Terraform workspace may warn about `db_password` if that variable still exists in Terraform Cloud. It is not used by the current Terraform root module and can be removed from the workspace variables.
-- `electron-app/node_modules` is currently present in the repository history. A future cleanup should remove it from git tracking and rely on `package-lock.json` plus `npm install`.
-- The Electron app points to the current Elastic IP in `electron-app/preload.js`. If the IP changes, update `BASE_URL`.
+- Public IPv4/EIP can still cost money while the live endpoint is enabled.
+- The HCP Terraform workspace may warn about `db_password` if that variable remains in Terraform Cloud.
+- `electron-app/node_modules` is currently present in git history; future cleanup should remove it from tracking and rely on `package-lock.json`.
 
-## Next Improvement Candidates
+## Recommended Next Improvements
 
-- Move environment-specific IDs and URLs into config files or deployment outputs
-- Add API authentication for dashboard endpoints
-- Add least-privilege IAM review
-- Add richer remediation policies and dry-run mode
-- Add CloudWatch dashboard import automation
-- Add end-to-end tests for API responses
-- Remove tracked `node_modules`
-- Add release screenshots and architecture images to `docs/`
+- Improve GitHub Actions deployment so it copies the latest Flask app code to EC2 before restart.
+- Add API authentication before exposing real operational controls.
+- Add AWS Budget resources or documented manual budget setup.
+- Add screenshots to `docs/`.
+- Remove tracked `node_modules`.

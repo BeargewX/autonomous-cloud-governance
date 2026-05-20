@@ -1,0 +1,17 @@
+# Free-first settings for after demos.
+#
+# Important:
+# - Run a normal terraform plan first after pulling these changes.
+# - Then intentionally use this file only when you want to reduce live AWS cost.
+# - Disabling public IPv4 will break the public Flask/Electron live endpoint.
+
+enable_public_ipv4   = false
+enable_public_ssh    = false
+enable_vpc_flow_logs = false
+ec2_cpu_credits      = "standard"
+
+common_tags = {
+  Project  = "autonomous-cloud-governance"
+  CostMode = "free-demo"
+  Owner    = "student"
+}

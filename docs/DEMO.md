@@ -1,135 +1,113 @@
 # Demo Script
 
-This script is optimized for a 5-10 minute project presentation.
+This demo has two modes:
 
-## Before The Demo
+- Mock mode: safest and free. Use it to show the dashboard and API without AWS calls.
+- Live AWS mode: use it only when you want to prove the real cloud integration.
 
-Run these checks first:
+## Before Demo
+
+Check repo state:
 
 ```powershell
-cd "D:\BG\Cloud Engineer\autonomous-cloud-governance"
 git status
 ```
 
-```powershell
-cd terraform
-terraform output
-```
-
-Open the backend health endpoint:
-
-```text
-http://13.228.240.37:5000/health
-```
-
-Expected response:
-
-```json
-{"status":"ok"}
-```
-
-Start the desktop app:
+Run static safety checks:
 
 ```powershell
-cd ..\electron-app
-npm start
+.\scripts\check-cost-risk.ps1
 ```
 
-## Storyline
+## Mock Mode Demo
 
-### 1. Problem
+Terminal 1:
 
-"Cloud teams often react to incidents and cost problems after they happen. This project turns the cloud environment into an automated governance platform that can monitor, respond, and keep evidence."
+```powershell
+.\scripts\start-local.ps1 -Mode mock
+```
 
-### 2. Architecture
+Terminal 2:
 
-Show the block diagram and describe the four layers:
+```powershell
+.\scripts\demo-health-check.ps1 -BaseUrl http://127.0.0.1:5000
+.\scripts\start-dashboard.ps1 -BaseUrl http://127.0.0.1:5000
+```
 
-- Infrastructure: VPC, EC2, DynamoDB, SNS, CloudWatch
-- Self-healing: EventBridge and Lambda respond to alarms or EC2 state changes
-- FinOps: scheduled Lambda checks cost and lifecycle opportunities
-- Governance dashboard: Flask API and Electron UI show operational status
+Say:
 
-### 3. Deployment
+"This is the free local mode. It proves the application flow and dashboard without keeping AWS resources open."
 
 Show:
 
-- GitHub Actions workflow
+- `/health`
+- `/api/status`
+- `/api/cpu`
+- `/api/incidents`
+- `/api/governance-score`
+- `/api/policy-checks`
+- `/api/drift`
+- `/api/incident-priority`
+- Electron dashboard
+
+## Live AWS Demo
+
+Use this only when the EC2 app endpoint is intentionally running:
+
+```powershell
+.\scripts\demo-health-check.ps1 -BaseUrl http://13.228.240.37:5000
+.\scripts\start-dashboard.ps1 -BaseUrl http://13.228.240.37:5000
+```
+
+Show:
+
 - Terraform Cloud successful run
-- AWS resources created by Terraform
+- AWS EC2 instance
+- Lambda functions
+- EventBridge rules
+- DynamoDB incident table
+- CloudWatch alarm or Lambda metrics
+- Electron dashboard connected to the live endpoint
 
-Key line to say:
+Say:
 
-"The infrastructure is not manually clicked together. It is reproducible through Terraform Cloud."
+"The same dashboard can run against mock data or the live AWS environment. That keeps the project usable without spending money every time."
 
-### 4. Live Backend
+Then show the assistant report:
 
-Open:
-
-```text
-http://13.228.240.37:5000
-http://13.228.240.37:5000/api/status
-http://13.228.240.37:5000/api/incidents
+```powershell
+.\scripts\export-report.ps1 -BaseUrl http://127.0.0.1:5000
 ```
 
-Explain:
+Say:
 
-- `/api/status` reads EC2 status from AWS
-- `/api/incidents` reads incident history from DynamoDB
-- `/api/cpu` reads CloudWatch metrics
+"The system is not just observing cloud resources. It produces an actionable engineer report with risk, drift, priority, and next steps."
 
-### 5. Dashboard
+## Architecture Story
 
-Open the Electron app and show:
-
-- EC2 state
-- CPU usage
-- Lambda invocation counts
-- Incident log
-- Infrastructure summary
-
-Key line to say:
-
-"This is the operations cockpit for the governance platform."
-
-### 6. Self-Healing Evidence
-
-Show one of these:
-
-- DynamoDB incident item
-- CloudWatch alarm or EventBridge rule
-- Lambda logs for `cloud-governance-self-healing`
-- A previous EC2 stop or CPU alarm recovery
-
-Key line to say:
-
-"The important part is not just detecting a problem. The platform records what happened and what action was taken."
-
-### 7. FinOps Evidence
-
-Show:
-
-- `cloud-governance-finops`
-- `cloud-governance-cost-anomaly`
-- `cloud-governance-s3-lifecycle`
-- EventBridge schedules
-
-Key line to say:
-
-"FinOps runs as scheduled automation, so cost governance becomes continuous instead of a month-end manual task."
+1. GitHub Actions validates code.
+2. Terraform Cloud provisions AWS.
+3. EC2 hosts the Flask governance API.
+4. CloudWatch and EventBridge detect operational events.
+5. Lambda performs self-healing and FinOps actions.
+6. DynamoDB stores evidence.
+7. Electron displays the governance view.
 
 ## Closing
 
-Use this summary:
+"The project is now demo-ready and cost-aware: local mode is free, live mode proves the cloud workflow, and the after-demo checklist reduces billing risk."
 
-"This project demonstrates a complete cloud engineering workflow: CI/CD, infrastructure as code, monitoring, self-healing, cost governance, evidence logging, and a dashboard for operations. The core platform is working; the next stage is improving security, multi-account support, and richer remediation policies."
+## After Demo
 
-## Post-Demo Cost Check
+Run:
 
-After the demo, verify:
+```powershell
+.\scripts\check-cost-risk.ps1
+```
 
-- EC2 instance is still intended to run
-- CloudWatch log groups do not have excessive retention
-- EventBridge schedules are expected
-- Elastic IP is attached
-- Terraform Cloud state matches AWS
+Then decide whether to:
+
+- stop EC2
+- disable public IPv4
+- disable VPC Flow Logs
+- destroy the stack

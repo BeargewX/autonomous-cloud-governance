@@ -1,9 +1,42 @@
 const { contextBridge } = require('electron')
+const fs = require('fs')
+const path = require('path')
 
-const BASE_URL = 'http://13.228.240.37:5000'
+const DEFAULT_CONFIG = {
+  baseUrl: 'http://127.0.0.1:5000',
+  region: 'ap-southeast-1',
+  instanceId: 'i-0327c7e7774cbc046',
+  vpcId: 'vpc-06e9c3d4332fcb893',
+  publicEndpoint: 'http://13.228.240.37:5000',
+  refreshIntervalMs: 60000
+}
 
-async function getJson(path) {
-  const res = await fetch(`${BASE_URL}${path}`)
+function readJsonIfExists(filePath) {
+  if (!fs.existsSync(filePath)) return {}
+  return JSON.parse(fs.readFileSync(filePath, 'utf8'))
+}
+
+function loadConfig() {
+  const configPath = path.join(__dirname, 'config.json')
+  const localConfigPath = path.join(__dirname, 'config.local.json')
+
+  const config = {
+    ...DEFAULT_CONFIG,
+    ...readJsonIfExists(configPath),
+    ...readJsonIfExists(localConfigPath)
+  }
+
+  if (process.env.DASHBOARD_BASE_URL) {
+    config.baseUrl = process.env.DASHBOARD_BASE_URL
+  }
+
+  return config
+}
+
+const CONFIG = loadConfig()
+
+async function getJson(apiPath) {
+  const res = await fetch(`${CONFIG.baseUrl}${apiPath}`)
 
   if (!res.ok) {
     throw new Error(`Request failed: ${res.status} ${res.statusText}`)
@@ -13,10 +46,17 @@ async function getJson(path) {
 }
 
 contextBridge.exposeInMainWorld('api', {
-  baseUrl: BASE_URL,
+  config: CONFIG,
+  baseUrl: CONFIG.baseUrl,
   getCpu: () => getJson('/api/cpu'),
   getIncidents: () => getJson('/api/incidents'),
   getStatus: () => getJson('/api/status'),
   getLambdaStats: () => getJson('/api/lambda-stats'),
-  getHealth: () => getJson('/health')
+  getHealth: () => getJson('/health'),
+  getGovernanceScore: () => getJson('/api/governance-score'),
+  getPolicyChecks: () => getJson('/api/policy-checks'),
+  getDrift: () => getJson('/api/drift'),
+  getIncidentPriority: () => getJson('/api/incident-priority'),
+  getReport: () => getJson('/api/report'),
+  getAssistantSummary: () => getJson('/api/assistant-summary')
 })

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' http://13.228.240.37:5000; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' http://127.0.0.1:* http://localhost:* http://13.228.240.37:5000; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'">
   <title>Cloud Governance Monitor</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -184,6 +184,89 @@
     .infra-id { font-size: 11px; color: #64748b; font-family: monospace; margin-top: 2px; }
     .lambda-name { font-family: monospace; color: #94a3b8; }
 
+    .score-wrap {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .score-ring {
+      width: 108px;
+      height: 108px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: conic-gradient(#22c55e 0deg, #1e2433 0deg);
+      position: relative;
+    }
+
+    .score-ring::before {
+      content: '';
+      position: absolute;
+      width: 82px;
+      height: 82px;
+      border-radius: 50%;
+      background: #141824;
+    }
+
+    .score-ring span {
+      position: relative;
+      font-size: 28px;
+      font-weight: 600;
+      color: #e2e8f0;
+    }
+
+    .score-row,
+    .action-row,
+    .policy-row,
+    .drift-row {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 0;
+      border-bottom: 1px solid #1e2433;
+      font-size: 12px;
+    }
+
+    .score-row:last-child,
+    .action-row:last-child,
+    .policy-row:last-child,
+    .drift-row:last-child { border-bottom: none; }
+
+    .mini-track {
+      height: 5px;
+      background: #1e2433;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .mini-fill {
+      height: 100%;
+      background: #60a5fa;
+      border-radius: 3px;
+    }
+
+    .status-pass { background: #0d2e1f; color: #22c55e; }
+    .status-warn { background: #2d1f00; color: #f59e0b; }
+    .status-fail { background: #2d0f0f; color: #ef4444; }
+    .status-watch { background: #0c1e3d; color: #60a5fa; }
+
+    .report-box {
+      height: 160px;
+      overflow: auto;
+      white-space: pre-wrap;
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+      font-size: 11px;
+      line-height: 1.45;
+      color: #94a3b8;
+      background: #0f1117;
+      border: 1px solid #1e2433;
+      border-radius: 6px;
+      padding: 10px;
+    }
+
     .pill {
       font-size: 10px;
       padding: 2px 8px;
@@ -222,7 +305,7 @@
   <div class="titlebar-dot dot-red"></div>
   <div class="titlebar-dot dot-yellow"></div>
   <div class="titlebar-dot dot-green"></div>
-  <span class="titlebar-title">cloud-governance-monitor - ap-southeast-1</span>
+  <span class="titlebar-title">cloud-governance-monitor - <span id="region-label">ap-southeast-1</span></span>
   <span class="status-pill" id="system-status">healthy</span>
 </div>
 
@@ -267,9 +350,42 @@
         <div class="metric-sub">Lambda invocations</div>
       </div>
       <div class="card">
-        <div class="card-label">Cost today</div>
-        <div class="metric-big green">$0.00</div>
-        <div class="metric-sub green">Free tier demo mode</div>
+        <div class="card-label">Governance score</div>
+        <div class="metric-big green" id="overall-score">--</div>
+        <div class="metric-sub" id="overall-grade">Cloud Engineer Assistant</div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="section-head">Cloud Engineer Assistant</div>
+        <div class="score-wrap">
+          <div class="score-ring" id="score-ring"><span id="score-ring-text">--</span></div>
+          <div id="category-scores">
+            <div class="score-row"><span class="muted">Loading scorecard...</span><div></div><span></span></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="section-head">Recommended actions</div>
+        <div id="action-list">
+          <div class="action-row"><span class="badge badge-ok">OK</span><span>Loading recommendations...</span><span></span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="section-head">Policy checks</div>
+        <div id="policy-list">
+          <div class="policy-row"><span class="badge badge-ok">OK</span><span>Loading policy checks...</span><span></span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="section-head">Drift detector</div>
+        <div id="drift-list">
+          <div class="drift-row"><span class="badge badge-ok">OK</span><span>Loading drift status...</span><span></span></div>
+        </div>
       </div>
     </div>
 
@@ -309,6 +425,38 @@
 
     <div class="grid2">
       <div class="card">
+        <div class="section-head">Incident priority</div>
+        <div id="priority-list">
+          <div class="incident-row">
+            <span class="badge badge-ok">OK</span>
+            <span>Loading incident priorities...</span>
+            <span class="muted">DynamoDB</span>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="section-head">Infrastructure</div>
+        <div class="infra-row">
+          <div><div>cloud-governance-app</div><div class="infra-id" id="instance-id">loading...</div></div>
+          <span class="pill pill-green" id="ec2-pill">--</span>
+        </div>
+        <div class="infra-row">
+          <div><div>cloud-governance-vpc</div><div class="infra-id" id="vpc-id">loading...</div></div>
+          <span class="pill pill-green">active</span>
+        </div>
+        <div class="infra-row">
+          <div><div>incident-log table</div><div class="infra-id">DynamoDB / PAY_PER_REQUEST</div></div>
+          <span class="pill pill-green">active</span>
+        </div>
+        <div class="infra-row">
+          <div><div id="endpoint-label">backend endpoint</div><div class="infra-id">Flask API / configurable</div></div>
+          <span class="pill pill-blue">config</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
         <div class="section-head">Incident log</div>
         <div id="incident-list">
           <div class="incident-row">
@@ -319,23 +467,8 @@
         </div>
       </div>
       <div class="card">
-        <div class="section-head">Infrastructure</div>
-        <div class="infra-row">
-          <div><div>cloud-governance-app</div><div class="infra-id">i-0327c7e7774cbc046 / t3.micro</div></div>
-          <span class="pill pill-green" id="ec2-pill">--</span>
-        </div>
-        <div class="infra-row">
-          <div><div>cloud-governance-vpc</div><div class="infra-id">vpc-06e9c3d4332fcb893</div></div>
-          <span class="pill pill-green">active</span>
-        </div>
-        <div class="infra-row">
-          <div><div>incident-log table</div><div class="infra-id">DynamoDB / PAY_PER_REQUEST</div></div>
-          <span class="pill pill-green">active</span>
-        </div>
-        <div class="infra-row">
-          <div><div>13.228.240.37</div><div class="infra-id">Elastic IP / Flask :5000</div></div>
-          <span class="pill pill-blue">public</span>
-        </div>
+        <div class="section-head">Governance report</div>
+        <div class="report-box" id="report-box">Loading report...</div>
       </div>
     </div>
   </div>
@@ -344,21 +477,57 @@
 <script>
 const cloudApi = window.api || {
   baseUrl: 'Electron preload unavailable',
-  getCpu: async () => ({ current: 0, history: [], status: 'offline' }),
-  getStatus: async () => ({ ec2: 'offline' }),
-  getLambdaStats: async () => ({ self_healing: { invocations: 0 }, finops: { invocations: 0 } }),
-  getIncidents: async () => ({ count: 0, incidents: [] })
+  config: {
+    region: 'ap-southeast-1',
+    instanceId: 'i-0327c7e7774cbc046',
+    vpcId: 'vpc-06e9c3d4332fcb893',
+    publicEndpoint: 'http://13.228.240.37:5000'
+  },
+  getCpu: async () => ({ current: 0, history: [], status: 'offline', mode: 'preview' }),
+  getStatus: async () => ({ ec2: 'offline', mode: 'preview' }),
+  getLambdaStats: async () => ({ self_healing: { invocations: 0 }, finops: { invocations: 0 }, mode: 'preview' }),
+  getIncidents: async () => ({ count: 0, incidents: [], mode: 'preview' }),
+  getGovernanceScore: async () => ({
+    overall: 0,
+    grade: 'N/A',
+    categories: {},
+    recommended_actions: [],
+    findings: [],
+    mode: 'preview'
+  }),
+  getPolicyChecks: async () => ({ checks: [], count: 0, warnings: 0, failing: 0, mode: 'preview' }),
+  getDrift: async () => ({ status: 'offline', checks: [], mode: 'preview' }),
+  getIncidentPriority: async () => ({ count: 0, incidents: [], mode: 'preview' }),
+  getReport: async () => ({ markdown: 'Report unavailable in static preview.', mode: 'preview' }),
+  getAssistantSummary: async () => ({
+    score: {
+      overall: 0,
+      grade: 'N/A',
+      categories: {},
+      recommended_actions: [],
+      findings: []
+    },
+    policies: [],
+    drift: { status: 'offline', checks: [] },
+    incidents: { count: 0, incidents: [] },
+    mode: 'preview'
+  })
 }
 
 document.getElementById('backend-url').textContent = cloudApi.baseUrl
+document.getElementById('region-label').textContent = cloudApi.config.region || 'ap-southeast-1'
+document.getElementById('instance-id').textContent = (cloudApi.config.instanceId || 'unknown') + ' / t3.micro'
+document.getElementById('vpc-id').textContent = cloudApi.config.vpcId || 'unknown'
+document.getElementById('endpoint-label').textContent = cloudApi.baseUrl
+const refreshIntervalMs = Number(cloudApi.config.refreshIntervalMs || 60000)
 
-function setCpuState(cpuVal, status) {
+function setCpuState(cpuVal, status, mode) {
   const stateClass = cpuVal > 70 ? 'red' : cpuVal > 50 ? 'amber' : 'green'
   const stateColor = cpuVal > 70 ? '#ef4444' : cpuVal > 50 ? '#f59e0b' : '#22c55e'
 
   document.getElementById('cpu-val').textContent = cpuVal + '%'
   document.getElementById('cpu-val').className = 'metric-big ' + stateClass
-  document.getElementById('cpu-sub').textContent = 'Status: ' + (status || 'ok')
+  document.getElementById('cpu-sub').textContent = 'Status: ' + (status || 'ok') + ' / ' + (mode || 'unknown')
   document.getElementById('cpu-bar').style.width = cpuVal + '%'
   document.getElementById('cpu-bar').style.background = stateColor
   document.getElementById('cpu-pct2').textContent = cpuVal + '%'
@@ -405,17 +574,138 @@ function renderIncidents(incidents) {
   }).join('')
 }
 
+function statusClass(status) {
+  if (status === 'pass' || status === 'clean') return 'status-pass'
+  if (status === 'fail' || status === 'drift') return 'status-fail'
+  if (status === 'watch') return 'status-watch'
+  return 'status-warn'
+}
+
+function renderScore(score) {
+  const overall = score.overall ?? 0
+  const degrees = Math.max(0, Math.min(100, overall)) * 3.6
+  const ringColor = overall >= 85 ? '#22c55e' : overall >= 70 ? '#f59e0b' : '#ef4444'
+
+  document.getElementById('overall-score').textContent = overall
+  document.getElementById('overall-score').className = 'metric-big ' + (overall >= 85 ? 'green' : overall >= 70 ? 'amber' : 'red')
+  document.getElementById('overall-grade').textContent = 'Grade ' + (score.grade || 'N/A') + ' / ' + (score.mode || 'unknown')
+  document.getElementById('score-ring').style.background = `conic-gradient(${ringColor} ${degrees}deg, #1e2433 0deg)`
+  document.getElementById('score-ring-text').textContent = overall
+
+  const categories = Object.entries(score.categories || {})
+  document.getElementById('category-scores').innerHTML = categories.length
+    ? categories.map(([key, item]) => `
+      <div class="score-row">
+        <span>${item.label || key}</span>
+        <div class="mini-track"><div class="mini-fill" style="width:${item.score || 0}%;background:${(item.score || 0) >= 85 ? '#22c55e' : (item.score || 0) >= 70 ? '#f59e0b' : '#ef4444'}"></div></div>
+        <span>${item.score || 0}</span>
+      </div>
+    `).join('')
+    : '<div class="score-row"><span class="muted">No score data</span><div></div><span></span></div>'
+
+  const actions = score.recommended_actions || []
+  document.getElementById('action-list').innerHTML = actions.length
+    ? actions.map((action) => `
+      <div class="action-row">
+        <span class="badge ${statusClass(action.severity === 'high' || action.severity === 'critical' ? 'fail' : 'warn')}">${action.severity || 'info'}</span>
+        <span>${action.recommendation}</span>
+        <span class="muted">${action.title}</span>
+      </div>
+    `).join('')
+    : '<div class="action-row"><span class="badge badge-ok">OK</span><span>No priority recommendations</span><span></span></div>'
+}
+
+function renderPolicyChecks(policies) {
+  const checks = policies.checks || []
+  const visible = checks.filter((check) => check.status !== 'pass').slice(0, 7)
+  document.getElementById('policy-list').innerHTML = visible.length
+    ? visible.map((check) => `
+      <div class="policy-row">
+        <span class="badge ${statusClass(check.status)}">${check.status}</span>
+        <span>${check.title}</span>
+        <span class="muted">${check.category}</span>
+      </div>
+    `).join('')
+    : '<div class="policy-row"><span class="badge badge-ok">PASS</span><span>All visible policies passed</span><span></span></div>'
+}
+
+function renderDrift(drift) {
+  const checks = drift.checks || []
+  document.getElementById('drift-list').innerHTML = checks.length
+    ? checks.slice(0, 6).map((check) => `
+      <div class="drift-row">
+        <span class="badge ${statusClass(check.status)}">${check.status}</span>
+        <span>${check.resource}</span>
+        <span class="muted">${check.observed}</span>
+      </div>
+    `).join('')
+    : '<div class="drift-row"><span class="badge badge-ok">OK</span><span>No drift checks available</span><span></span></div>'
+}
+
+function renderPriorities(priority) {
+  const incidents = priority.incidents || []
+  document.getElementById('priority-list').innerHTML = incidents.length
+    ? incidents.slice(0, 5).map((incident) => `
+      <div class="incident-row">
+        <span class="badge ${incident.severity === 'critical' || incident.severity === 'high' ? 'badge-stop' : 'badge-cpu'}">${incident.priority_score}</span>
+        <span>${incident.incident_type}: ${incident.next_action}</span>
+        <span class="muted">${incident.severity}</span>
+      </div>
+    `).join('')
+    : '<div class="incident-row"><span class="badge badge-ok">OK</span><span>No incidents to prioritize</span><span></span></div>'
+}
+
+function renderReport(report) {
+  document.getElementById('report-box').textContent = report.markdown || 'No report available.'
+}
+
+function renderReportFromSummary(summary) {
+  const score = summary.score || {}
+  const drift = summary.drift || {}
+  const incidents = summary.incidents || { incidents: [] }
+  const actions = score.recommended_actions || []
+
+  const lines = [
+    '# Cloud Governance Report',
+    '',
+    'Mode: ' + (summary.mode || 'unknown'),
+    'Overall Score: ' + (score.overall ?? 'n/a') + ' (' + (score.grade || 'N/A') + ')',
+    '',
+    'Recommended Actions:'
+  ]
+
+  if (actions.length) {
+    actions.slice(0, 5).forEach((action) => {
+      lines.push('- [' + (action.severity || 'info').toUpperCase() + '] ' + action.recommendation)
+    })
+  } else {
+    lines.push('- No priority actions.')
+  }
+
+  lines.push('', 'Drift Status: ' + (drift.status || 'unknown'), '', 'Incident Priority:')
+  if (incidents.incidents?.length) {
+    incidents.incidents.slice(0, 5).forEach((incident) => {
+      lines.push('- ' + incident.incident_type + ' / ' + incident.severity + ' / ' + incident.next_action)
+    })
+  } else {
+    lines.push('- No incidents.')
+  }
+
+  renderReport({ markdown: lines.join('\n') })
+}
+
 async function fetchAll() {
   try {
-    const [cpu, status, lambda, incidents] = await Promise.all([
+    const [cpu, status, lambda, incidents, assistant] = await Promise.all([
       cloudApi.getCpu(),
       cloudApi.getStatus(),
       cloudApi.getLambdaStats(),
-      cloudApi.getIncidents()
+      cloudApi.getIncidents(),
+      cloudApi.getAssistantSummary()
     ])
 
     const cpuVal = cpu.current || 0
-    setCpuState(cpuVal, cpu.status)
+    setCpuState(cpuVal, cpu.status, cpu.mode)
     renderCpuChart(cpu.history || [])
 
     const ec2State = status.ec2 || 'unknown'
@@ -429,11 +719,16 @@ async function fetchAll() {
     document.getElementById('fo-inv').textContent = lambda.finops?.invocations ?? 0
     document.getElementById('heal-count').textContent = lambda.self_healing?.invocations ?? 0
 
+    renderScore(assistant.score || {})
+    renderPolicyChecks({ checks: assistant.policies || [] })
+    renderDrift(assistant.drift || {})
+    renderPriorities(assistant.incidents || { incidents: [] })
     renderIncidents(incidents)
+    renderReportFromSummary(assistant)
 
     const now = new Date()
     document.getElementById('refresh-time').textContent =
-      'Last updated ' + now.toLocaleTimeString() + ' / refresh every 30 seconds'
+      'Last updated ' + now.toLocaleTimeString() + ' / mode ' + (cpu.mode || status.mode || 'unknown') + ' / refresh every ' + Math.round(refreshIntervalMs / 1000) + ' seconds'
   } catch (err) {
     document.getElementById('ec2-status').textContent = 'error'
     document.getElementById('ec2-status').className = 'metric-big red'
@@ -445,7 +740,7 @@ async function fetchAll() {
 }
 
 fetchAll()
-setInterval(fetchAll, 30000)
+setInterval(fetchAll, refreshIntervalMs)
 </script>
 </body>
 </html>

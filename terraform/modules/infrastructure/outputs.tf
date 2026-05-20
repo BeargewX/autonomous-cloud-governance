@@ -14,8 +14,8 @@ output "private_subnet_ids" {
 }
 
 output "app_public_ip" {
-  description = "EC2 Public IP — เปิดเว็บได้ที่ http://<ip>:5000"
-  value       = aws_eip.app.public_ip
+  description = "EC2 public IP. Null when enable_public_ipv4=false."
+  value       = try(aws_eip.app[0].public_ip, null)
 }
 
 output "dynamodb_table_name" {

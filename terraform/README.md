@@ -2,7 +2,7 @@
 
 This directory is configured for HCP Terraform.
 
-## Commands
+## Normal Demo Commands
 
 ```powershell
 terraform init
@@ -13,7 +13,7 @@ terraform output
 
 ## Remote Backend
 
-The root module uses:
+The root module uses HCP Terraform:
 
 ```hcl
 cloud {
@@ -23,6 +23,23 @@ cloud {
   }
 }
 ```
+
+## Free-First Variables
+
+| Variable | Default | Why it matters |
+|---|---:|---|
+| `enable_public_ipv4` | `true` | Keeps the existing live demo endpoint working. Set false after demos to reduce public IPv4 cost. |
+| `enable_public_ssh` | `false` | Prefer SSM Session Manager over internet SSH. |
+| `enable_vpc_flow_logs` | `true` | Useful for governance demos, but can create CloudWatch Logs cost. |
+| `ec2_cpu_credits` | `standard` | Avoids T3 unlimited burst charges. |
+
+Review the low-cost example:
+
+```powershell
+terraform plan -var-file=free.tfvars.example
+```
+
+Do not apply it blindly. It can remove the public endpoint.
 
 ## Lambda Packaging
 

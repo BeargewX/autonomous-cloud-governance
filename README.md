@@ -1,37 +1,55 @@
 # Autonomous Cloud Governance Platform
 
-Autonomous Cloud Governance is a working AWS cloud operations project that combines infrastructure provisioning, self-healing automation, FinOps checks, monitoring APIs, and an Electron dashboard into one demo-ready platform.
+Autonomous Cloud Governance is a demo-ready AWS cloud operations project focused on three rules:
 
-The project is designed to show how a cloud engineering team can move from manual incident response to automated governance:
+- Free-first: local/mock mode is the default, and live AWS is used only when needed.
+- Easy-first: common workflows have scripts and checklists.
+- Demo-real: the project can show real Terraform Cloud, AWS, self-healing, FinOps, and dashboard flows.
 
-- provision infrastructure with Terraform Cloud
-- deploy and monitor a Flask service on EC2
-- react to CloudWatch and EC2 state events with EventBridge and Lambda
-- store incident evidence in DynamoDB
-- send notifications through SNS
-- expose operational data through API endpoints
-- view the platform from a desktop governance dashboard
+## What It Does
 
-## Current Status
+- provisions AWS infrastructure with Terraform Cloud
+- runs a Flask API for governance data
+- records incident evidence in DynamoDB
+- uses EventBridge and Lambda for self-healing and FinOps automation
+- exposes EC2 status, CPU, incidents, and Lambda stats through APIs
+- shows operations data in an Electron desktop dashboard
+- provides a mock/local mode that does not call AWS
+- acts as a Cloud Engineer Assistant with scoring, policy checks, drift detection, incident prioritization, and report generation
 
-Status: demo ready
+## Free-First Workflow
 
-Last verified: May 2026
+Use this for normal development:
 
-Region: `ap-southeast-1`
-
-Live Flask endpoint:
-
-```text
-http://13.228.240.37:5000
+```powershell
+.\scripts\start-local.ps1 -Mode mock
+.\scripts\start-dashboard.ps1 -BaseUrl http://127.0.0.1:5000
 ```
 
-Recently verified:
+This mode uses fake governance data and avoids AWS cost.
 
-- Terraform Cloud apply completed successfully
-- AWS infrastructure was created and updated without destroying resources
-- Lambda packaging works for Terraform remote runs
-- EC2, Flask API, DynamoDB, SNS, CloudWatch, EventBridge, and Electron dashboard flows were checked
+Use live AWS only for a real demo:
+
+```powershell
+.\scripts\demo-health-check.ps1 -BaseUrl http://13.228.240.37:5000
+.\scripts\start-dashboard.ps1 -BaseUrl http://13.228.240.37:5000
+```
+
+## Cost Safety
+
+Read this before running live AWS:
+
+```text
+docs/COST_SAFETY.md
+```
+
+Important cost notes:
+
+- Public IPv4 / Elastic IP can cost money even for small demos.
+- NAT Gateway is intentionally not used.
+- VPC Flow Logs are configurable because CloudWatch Logs can grow.
+- EC2 T3 CPU credits are set to `standard` to avoid unlimited burst charges.
+- Keep an AWS Budget alert at a low threshold such as 1 USD.
 
 ## Architecture
 
@@ -64,15 +82,6 @@ flowchart TD
     G --> H[Electron Desktop App]
 ```
 
-## Layers
-
-| Layer | Purpose | Main components |
-|---|---|---|
-| Layer 1 | Core AWS infrastructure | VPC, public/private subnets, EC2, security groups, DynamoDB, SNS, CloudWatch |
-| Layer 2 | Self-healing | EventBridge rules, Lambda self-healing function, CloudWatch alarm handling |
-| Layer 3 | FinOps | Scheduled Lambda checks, cost anomaly workflow, S3 lifecycle workflow |
-| Layer 4 | Governance dashboard | Flask API, Electron desktop monitor, incident/status/cost views |
-
 ## Repository Structure
 
 ```text
@@ -80,80 +89,60 @@ autonomous-cloud-governance/
 ├── .github/workflows/deploy.yml
 ├── app/
 │   ├── app.py
+│   ├── .env.example
 │   ├── requirements.txt
 │   └── tests/
-├── dashboards/
-│   └── governance-dashboard.json
 ├── docs/
+│   ├── COST_SAFETY.md
 │   ├── DEMO.md
-│   └── PROJECT_STATUS.md
+│   ├── PROJECT_STATUS.md
+│   └── TEST_PLAN.md
 ├── electron-app/
+│   ├── config.json
 │   ├── index.html
 │   ├── main.js
 │   ├── package.json
 │   └── preload.js
 ├── lambda/
-│   ├── cost_anomaly.py
-│   ├── finops.py
-│   ├── s3_lifecycle.py
-│   └── self_healing.py
-├── playbooks/
+├── scripts/
 └── terraform/
-    ├── main.tf
-    ├── outputs.tf
-    ├── variables.tf
-    └── modules/infrastructure/
 ```
 
-## Key API Endpoints
+## API Endpoints
 
 | Endpoint | Purpose |
 |---|---|
 | `/` | Service status |
-| `/health` | Health check for CI/demo validation |
-| `/metrics` | Basic governance feature flags |
-| `/api/cpu` | EC2 CPU history from CloudWatch |
-| `/api/status` | EC2 instance state |
-| `/api/incidents` | Recent incident records from DynamoDB |
-| `/api/lambda-stats` | Lambda invocation/error stats |
+| `/health` | Health check |
+| `/metrics` | Governance feature flags |
+| `/api/cpu` | EC2 CPU data or mock CPU data |
+| `/api/status` | EC2 state or mock state |
+| `/api/incidents` | DynamoDB incidents or mock incidents |
+| `/api/lambda-stats` | Lambda stats or mock stats |
+| `/api/governance-score` | Cloud governance scorecard |
+| `/api/policy-checks` | Cost, security, reliability, and operations checks |
+| `/api/drift` | Lightweight expected-vs-observed drift detector |
+| `/api/incident-priority` | Ranked incidents with next actions |
+| `/api/report` | Markdown governance report |
+| `/api/assistant-summary` | Combined assistant payload |
 
-## Local Backend Run
+## Cloud Engineer Assistant
 
-```powershell
-cd app
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-python app.py
-```
+The assistant turns the project from a monitoring dashboard into a decision-support tool. It answers the questions a cloud engineer usually has after opening a cloud account:
 
-For local testing with different AWS resources, set environment variables before starting the app:
+- Am I about to spend money?
+- What should I fix first?
+- Is my live demo safe to leave running?
+- Is anything drifting from the intended posture?
+- Can I produce evidence for a report?
 
-```powershell
-$env:AWS_REGION = "ap-southeast-1"
-$env:EC2_INSTANCE_ID = "i-0327c7e7774cbc046"
-$env:DYNAMODB_TABLE = "cloud-governance-incident-log"
-$env:DB_PATH = "data.db"
-python app.py
-```
-
-## Electron Dashboard
-
-```powershell
-cd electron-app
-npm install
-npm start
-```
-
-The dashboard currently points to:
+Read:
 
 ```text
-http://13.228.240.37:5000
+docs/CLOUD_ENGINEER_ASSISTANT.md
 ```
 
-If the EC2 Elastic IP changes, update `BASE_URL` in `electron-app/preload.js`.
-
-## Terraform Deployment
+## Terraform
 
 Terraform runs through HCP Terraform:
 
@@ -164,60 +153,61 @@ terraform plan
 terraform apply
 ```
 
-Important packaging note:
+For a lowest-cost after-demo review:
 
-The Terraform module packages Lambda functions from:
-
-```text
-terraform/modules/infrastructure/lambda/
+```powershell
+terraform plan -var-file=free.tfvars.example
 ```
 
-Keep these source files committed:
+Do not apply the free tfvars until you understand the plan. Disabling public IPv4 breaks the public endpoint.
 
-```text
-terraform/modules/infrastructure/lambda/cost_anomaly.py
-terraform/modules/infrastructure/lambda/s3_lifecycle.py
+## Scripts
+
+| Script | Purpose |
+|---|---|
+| `scripts/start-local.ps1` | Start Flask in mock or AWS mode |
+| `scripts/start-dashboard.ps1` | Start Electron dashboard against a chosen API URL |
+| `scripts/demo-health-check.ps1` | Check all API endpoints |
+| `scripts/check-cost-risk.ps1` | Static cost-risk scan |
+| `scripts/cleanup-after-demo.ps1` | Stop EC2 or run Terraform destroy with confirmation |
+| `scripts/export-report.ps1` | Export the assistant report to Markdown |
+
+## Test Plan
+
+Run:
+
+```powershell
+.\scripts\demo-health-check.ps1 -BaseUrl http://127.0.0.1:5000
+.\scripts\check-cost-risk.ps1
+cd terraform
+terraform fmt -check -recursive
+terraform validate
 ```
 
-They are required by the `archive_file` data sources during Terraform Cloud remote runs.
-
-## CI/CD
-
-The GitHub Actions workflow runs:
-
-1. Python test job for the Flask app
-2. Terraform init and plan
-3. EC2 app deployment through AWS Systems Manager on pushes to `main`
-
-Required GitHub secrets:
+More detail is in:
 
 ```text
-TF_API_TOKEN
-AWS_ACCESS_KEY_ID
-AWS_SECRET_ACCESS_KEY
+docs/TEST_PLAN.md
 ```
 
-## Demo Flow
+## Demo
 
-Use `docs/DEMO.md` as the presentation script.
+Use:
 
-Recommended live demo path:
+```text
+docs/DEMO.md
+```
 
-1. Show GitHub Actions and Terraform Cloud run history
-2. Open the Flask health endpoint
-3. Open the Electron dashboard
-4. Trigger or show a self-healing incident
-5. Show DynamoDB incident evidence
-6. Show Lambda/CloudWatch metrics
-7. Explain FinOps scheduled automation
+Recommended demo path:
 
-## Operational Notes
+1. show Terraform Cloud apply success
+2. show AWS resources
+3. open Flask `/health`
+4. open Electron dashboard
+5. show self-healing incident evidence
+6. show FinOps Lambda/schedule
+7. run cost-safety checklist
 
-- Remove unused Terraform Cloud variables such as `db_password` if the workspace warns that they are undeclared.
-- Watch AWS cost after demos, especially EC2, Elastic IP, CloudWatch logs, and NAT-related resources.
-- Keep Terraform state managed only by Terraform Cloud.
-- Avoid editing infrastructure manually in AWS unless the drift is intentional and documented.
+## Current Status
 
-## Resume Summary
-
-Built an Autonomous Cloud Governance Platform on AWS using Terraform Cloud, GitHub Actions, Flask, Lambda, EventBridge, DynamoDB, SNS, CloudWatch, and Electron. The platform provisions infrastructure as code, monitors EC2 health, performs event-driven self-healing, records incidents, supports FinOps automation, and displays governance status in a desktop dashboard.
+The platform is demo-ready. The next major improvement should be making deployment sync the latest Flask app code to EC2 automatically instead of only restarting the service.

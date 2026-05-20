@@ -1,4 +1,4 @@
-# DynamoDB Table สำหรับเก็บ incident log
+# DynamoDB table for incident logs
 resource "aws_dynamodb_table" "incident_log" {
   name         = "${var.project_name}-incident-log"
   billing_mode = "PAY_PER_REQUEST"
@@ -15,22 +15,22 @@ resource "aws_dynamodb_table" "incident_log" {
     type = "S"
   }
 
-  tags = {
+  tags = merge(var.common_tags, {
     Name        = "${var.project_name}-incident-log"
     Environment = var.environment
-  }
+  })
 }
 
-# SNS Topic สำหรับ alerts
+# SNS topic for alerts
 resource "aws_sns_topic" "alerts" {
   name = "${var.project_name}-alerts"
 
-  tags = {
+  tags = merge(var.common_tags, {
     Name = "${var.project_name}-alerts"
-  }
+  })
 }
 
-# IAM Role สำหรับ EC2
+# IAM Role for EC2
 resource "aws_iam_role" "ec2_role" {
   name = "${var.project_name}-ec2-role"
 
@@ -43,6 +43,10 @@ resource "aws_iam_role" "ec2_role" {
         Service = "ec2.amazonaws.com"
       }
     }]
+  })
+
+  tags = merge(var.common_tags, {
+    Name = "${var.project_name}-ec2-role"
   })
 }
 
@@ -64,9 +68,13 @@ resource "aws_iam_role_policy_attachment" "ec2_dynamodb" {
 resource "aws_iam_instance_profile" "ec2_profile" {
   name = "${var.project_name}-ec2-profile"
   role = aws_iam_role.ec2_role.name
+
+  tags = merge(var.common_tags, {
+    Name = "${var.project_name}-ec2-profile"
+  })
 }
 
-# Data source หา Amazon Linux AMI ล่าสุด
+# Latest Amazon Linux 2 AMI
 data "aws_ami" "amazon_linux" {
   most_recent = true
   owners      = ["amazon"]
@@ -79,11 +87,16 @@ data "aws_ami" "amazon_linux" {
 
 # EC2 Instance
 resource "aws_instance" "app" {
-  ami                    = data.aws_ami.amazon_linux.id
-  instance_type          = "t3.micro"
-  subnet_id              = aws_subnet.public_1.id
-  vpc_security_group_ids = [aws_security_group.app.id]
-  iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
+  ami                         = data.aws_ami.amazon_linux.id
+  instance_type               = "t3.micro"
+  subnet_id                   = aws_subnet.public_1.id
+  associate_public_ip_address = var.enable_public_ipv4
+  vpc_security_group_ids      = [aws_security_group.app.id]
+  iam_instance_profile        = aws_iam_instance_profile.ec2_profile.name
+
+  credit_specification {
+    cpu_credits = var.ec2_cpu_credits
+  }
 
   user_data = base64encode(<<-EOF
 #!/bin/bash
@@ -120,20 +133,21 @@ nohup python3 app.py > /var/log/app.log 2>&1 &
 EOF
   )
 
-  tags = {
+  tags = merge(var.common_tags, {
     Name        = "${var.project_name}-app"
     Environment = var.environment
-  }
+  })
 }
 
-# Elastic IP
+# Elastic IP. Disable this outside live demos to avoid public IPv4 hourly cost.
 resource "aws_eip" "app" {
+  count    = var.enable_public_ipv4 ? 1 : 0
   instance = aws_instance.app.id
   domain   = "vpc"
 
-  tags = {
+  tags = merge(var.common_tags, {
     Name = "${var.project_name}-app-eip"
-  }
+  })
 }
 
 # CloudWatch CPU Alarm
@@ -146,10 +160,14 @@ resource "aws_cloudwatch_metric_alarm" "cpu_high" {
   period              = 120
   statistic           = "Average"
   threshold           = 70
-  alarm_description   = "CPU > 70% — Self-healing triggered"
+  alarm_description   = "CPU > 70% - Self-healing triggered"
   alarm_actions       = [aws_sns_topic.alerts.arn]
 
   dimensions = {
     InstanceId = aws_instance.app.id
   }
+
+  tags = merge(var.common_tags, {
+    Name = "${var.project_name}-cpu-high"
+  })
 }
