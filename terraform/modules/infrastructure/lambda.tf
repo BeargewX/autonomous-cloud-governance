@@ -59,6 +59,24 @@ resource "aws_iam_role_policy" "lambda_policy" {
         Action = ["cloudwatch:GetMetricStatistics"]
         Resource = "*"
       }
+      {
+        Effect = "Allow"
+        Action = [
+          "ce:GetCostAndUsage",
+          "ce:GetCostForecast"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:ListBuckets",
+          "s3:ListAllMyBuckets",
+          "s3:GetBucketLifecycleConfiguration",
+          "s3:PutBucketLifecycleConfiguration"
+        ]
+        Resource = "*"
+      }
     ]
   })
 }
@@ -186,4 +204,77 @@ resource "aws_lambda_permission" "allow_eventbridge_finops" {
   function_name = aws_lambda_function.finops.function_name
   principal     = "events.amazonaws.com"
   source_arn    = aws_cloudwatch_event_rule.finops_schedule.arn
+}
+
+data "archive_file" "cost_anomaly" {
+  type        = "zip"
+  source_file = "${path.module}/lambda/cost_anomaly.py"
+  output_path = "${path.module}/lambda/cost_anomaly.zip"
+}
+
+data "archive_file" "s3_lifecycle" {
+  type        = "zip"
+  source_file = "${path.module}/lambda/s3_lifecycle.py"
+  output_path = "${path.module}/lambda/s3_lifecycle.zip"
+}
+
+resource "aws_lambda_function" "cost_anomaly" {
+  filename         = "${path.module}/lambda/cost_anomaly.zip"
+  function_name    = "${var.project_name}-cost-anomaly"
+  role             = aws_iam_role.lambda_role.arn
+  handler          = "cost_anomaly.lambda_handler"
+  runtime          = "python3.11"
+  source_code_hash = filebase64sha256("${path.module}/lambda/cost_anomaly.zip")
+  timeout          = 300
+
+  environment {
+    variables = {
+      DYNAMODB_TABLE = aws_dynamodb_table.incident_log.name
+      SNS_TOPIC_ARN  = aws_sns_topic.alerts.arn
+    }
+  }
+
+  tags = {
+    Name = "${var.project_name}-cost-anomaly"
+  }
+}
+
+resource "aws_lambda_function" "s3_lifecycle" {
+  filename         = "${path.module}/lambda/s3_lifecycle.zip"
+  function_name    = "${var.project_name}-s3-lifecycle"
+  role             = aws_iam_role.lambda_role.arn
+  handler          = "s3_lifecycle.lambda_handler"
+  runtime          = "python3.11"
+  source_code_hash = filebase64sha256("${path.module}/lambda/s3_lifecycle.zip")
+  timeout          = 300
+
+  environment {
+    variables = {
+      SNS_TOPIC_ARN = aws_sns_topic.alerts.arn
+    }
+  }
+
+  tags = {
+    Name = "${var.project_name}-s3-lifecycle"
+  }
+}
+
+resource "aws_cloudwatch_event_rule" "cost_anomaly_schedule" {
+  name                = "${var.project_name}-cost-anomaly-schedule"
+  description         = "Run cost anomaly check every morning"
+  schedule_expression = "cron(0 8 * * ? *)"
+}
+
+resource "aws_cloudwatch_event_target" "cost_anomaly" {
+  rule      = aws_cloudwatch_event_rule.cost_anomaly_schedule.name
+  target_id = "CostAnomalyLambda"
+  arn       = aws_lambda_function.cost_anomaly.arn
+}
+
+resource "aws_lambda_permission" "allow_eventbridge_cost" {
+  statement_id  = "AllowEventBridgeCost"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.cost_anomaly.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.cost_anomaly_schedule.arn
 }
