@@ -226,3 +226,22 @@ __marimo__/
 *.tfstate.backup
 terraform.tfvars
 *.tfvars
+
+# Node / Electron
+node_modules/
+electron-app/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local data
+data.db
+*.db
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Lambda build artifacts (zip ถูก build ใหม่ตอน deploy)
+lambda/*.zip
+terraform/modules/infrastructure/lambda/*.zip
