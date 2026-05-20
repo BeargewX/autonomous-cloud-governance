@@ -1,0 +1,38 @@
+---
+- name: Configure CloudWatch Agent
+  copy:
+    content: |
+      {
+        "agent": {
+          "metrics_collection_interval": 60,
+          "run_as_user": "root"
+        },
+        "metrics": {
+          "append_dimensions": {
+            "InstanceId": "${aws:InstanceId}"
+          },
+          "metrics_collected": {
+            "cpu": {
+              "measurement": ["cpu_usage_idle", "cpu_usage_user"],
+              "metrics_collection_interval": 60
+            },
+            "mem": {
+              "measurement": ["mem_used_percent"],
+              "metrics_collection_interval": 60
+            },
+            "disk": {
+              "measurement": ["disk_used_percent"],
+              "resources": ["/"],
+              "metrics_collection_interval": 60
+            }
+          }
+        }
+      }
+    dest: /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
+    mode: '0644'
+
+- name: Start CloudWatch Agent
+  command: >
+    /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl
+    -a fetch-config -m ec2 -s
+    -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json

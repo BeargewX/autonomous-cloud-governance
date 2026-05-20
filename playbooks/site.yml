@@ -1,0 +1,9 @@
+---
+- name: Cloud Governance Platform Setup
+  hosts: cloud_governance
+  become: yes
+  roles:
+    - base
+    - app
+    - monitoring
+    - compliance

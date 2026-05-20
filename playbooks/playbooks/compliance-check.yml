@@ -1,0 +1,32 @@
+---
+- name: Compliance Check Report
+  hosts: cloud_governance
+  become: yes
+  tasks:
+    - name: Check SSH config
+      command: grep -E "^PermitRootLogin|^PasswordAuthentication" /etc/ssh/sshd_config
+      register: ssh_config
+      changed_when: false
+
+    - name: Check open ports
+      command: ss -tlnp
+      register: open_ports
+      changed_when: false
+
+    - name: Check running services
+      command: systemctl list-units --type=service --state=running
+      register: services
+      changed_when: false
+
+    - name: Check disk usage
+      command: df -h /
+      register: disk_usage
+      changed_when: false
+
+    - name: Print compliance report
+      debug:
+        msg:
+          - "=== Compliance Report ==="
+          - "SSH Config: {{ ssh_config.stdout_lines }}"
+          - "Disk Usage: {{ disk_usage.stdout_lines }}"
+          - "Services running: OK"

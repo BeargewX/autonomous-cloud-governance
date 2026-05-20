@@ -1,0 +1,48 @@
+---
+- name: Create app directory
+  file:
+    path: /app
+    state: directory
+    mode: '0755'
+
+- name: Install Python dependencies
+  pip:
+    name:
+      - flask
+      - boto3
+      - requests
+    executable: pip3
+
+- name: Copy Flask app
+  copy:
+    src: ../../../app/app.py
+    dest: /app/app.py
+    mode: '0644'
+
+- name: Create systemd service for Flask app
+  copy:
+    content: |
+      [Unit]
+      Description=Cloud Governance Flask App
+      After=network.target
+
+      [Service]
+      Type=simple
+      User=ec2-user
+      WorkingDirectory=/app
+      ExecStart=/usr/bin/python3 /app/app.py
+      Restart=always
+      RestartSec=10
+      Environment=PYTHONUNBUFFERED=1
+
+      [Install]
+      WantedBy=multi-user.target
+    dest: /etc/systemd/system/cloud-governance.service
+    mode: '0644'
+
+- name: Enable and start Flask service
+  systemd:
+    name: cloud-governance
+    enabled: yes
+    state: started
+    daemon_reload: yes

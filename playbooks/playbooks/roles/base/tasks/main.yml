@@ -1,0 +1,29 @@
+---
+- name: Update system packages
+  yum:
+    name: "*"
+    state: latest
+
+- name: Install required packages
+  yum:
+    name:
+      - python3
+      - python3-pip
+      - amazon-cloudwatch-agent
+      - curl
+      - git
+    state: present
+
+- name: Set timezone to Asia/Bangkok
+  timezone:
+    name: Asia/Bangkok
+
+- name: Configure system limits
+  pam_limits:
+    domain: "*"
+    limit_type: "{{ item.type }}"
+    limit_item: nofile
+    value: "{{ item.value }}"
+  loop:
+    - { type: soft, value: 65536 }
+    - { type: hard, value: 65536 }

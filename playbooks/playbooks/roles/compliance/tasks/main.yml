@@ -1,0 +1,42 @@
+---
+- name: Disable root SSH login
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^PermitRootLogin'
+    line: 'PermitRootLogin no'
+    state: present
+  notify: restart sshd
+
+- name: Set password authentication off
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^PasswordAuthentication'
+    line: 'PasswordAuthentication no'
+    state: present
+  notify: restart sshd
+
+- name: Ensure firewall is running
+  service:
+    name: firewalld
+    state: started
+    enabled: yes
+
+- name: Allow only necessary ports
+  firewalld:
+    port: "{{ item }}"
+    permanent: yes
+    state: enabled
+  loop:
+    - "22/tcp"
+    - "5000/tcp"
+  notify: reload firewall
+
+- name: Check for world-writable files
+  command: find / -xdev -type f -perm -0002 -not -path "/proc/*"
+  register: world_writable
+  changed_when: false
+  failed_when: false
+
+- name: Report compliance status
+  debug:
+    msg: "World-writable files found: {{ world_writable.stdout_lines | length }}"
