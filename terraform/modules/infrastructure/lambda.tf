@@ -50,13 +50,13 @@ resource "aws_iam_role_policy" "lambda_policy" {
         Resource = aws_dynamodb_table.incident_log.arn
       },
       {
-        Effect   = "Allow"
-        Action   = ["sns:Publish"]
+        Effect = "Allow"
+        Action = ["sns:Publish"]
         Resource = aws_sns_topic.alerts.arn
       },
       {
-        Effect   = "Allow"
-        Action   = ["cloudwatch:GetMetricStatistics"]
+        Effect = "Allow"
+        Action = ["cloudwatch:GetMetricStatistics"]
         Resource = "*"
       },
       {
@@ -205,6 +205,7 @@ resource "aws_lambda_permission" "allow_eventbridge_finops" {
   principal     = "events.amazonaws.com"
   source_arn    = aws_cloudwatch_event_rule.finops_schedule.arn
 }
+
 resource "aws_lambda_function" "cost_anomaly" {
   filename         = "${path.module}/lambda/cost_anomaly.zip"
   function_name    = "${var.project_name}-cost-anomaly"
