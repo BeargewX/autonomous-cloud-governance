@@ -205,19 +205,6 @@ resource "aws_lambda_permission" "allow_eventbridge_finops" {
   principal     = "events.amazonaws.com"
   source_arn    = aws_cloudwatch_event_rule.finops_schedule.arn
 }
-
-data "archive_file" "cost_anomaly" {
-  type        = "zip"
-  source_file = "${path.module}/lambda/cost_anomaly.py"
-  output_path = "${path.module}/lambda/cost_anomaly.zip"
-}
-
-data "archive_file" "s3_lifecycle" {
-  type        = "zip"
-  source_file = "${path.module}/lambda/s3_lifecycle.py"
-  output_path = "${path.module}/lambda/s3_lifecycle.zip"
-}
-
 resource "aws_lambda_function" "cost_anomaly" {
   filename         = "${path.module}/lambda/cost_anomaly.zip"
   function_name    = "${var.project_name}-cost-anomaly"
