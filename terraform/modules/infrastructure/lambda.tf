@@ -266,3 +266,44 @@ resource "aws_lambda_permission" "allow_eventbridge_cost" {
   principal     = "events.amazonaws.com"
   source_arn    = aws_cloudwatch_event_rule.cost_anomaly_schedule.arn
 }
+
+resource "aws_lambda_function" "weekly_report" {
+  filename         = "${path.module}/lambda/weekly_report.zip"
+  function_name    = "${var.project_name}-weekly-report"
+  role             = aws_iam_role.lambda_role.arn
+  handler          = "weekly_report.lambda_handler"
+  runtime          = "python3.11"
+  source_code_hash = filebase64sha256("${path.module}/lambda/weekly_report.zip")
+  timeout          = 300
+
+  environment {
+    variables = {
+      DYNAMODB_TABLE = aws_dynamodb_table.incident_log.name
+      SNS_TOPIC_ARN  = aws_sns_topic.alerts.arn
+    }
+  }
+
+  tags = {
+    Name = "${var.project_name}-weekly-report"
+  }
+}
+
+resource "aws_cloudwatch_event_rule" "weekly_report_schedule" {
+  name                = "${var.project_name}-weekly-report-schedule"
+  description         = "Send weekly report every Monday 8am"
+  schedule_expression = "cron(0 1 ? * MON *)"
+}
+
+resource "aws_cloudwatch_event_target" "weekly_report" {
+  rule      = aws_cloudwatch_event_rule.weekly_report_schedule.name
+  target_id = "WeeklyReportLambda"
+  arn       = aws_lambda_function.weekly_report.arn
+}
+
+resource "aws_lambda_permission" "allow_eventbridge_weekly" {
+  statement_id  = "AllowEventBridgeWeekly"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.weekly_report.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.weekly_report_schedule.arn
+}
