@@ -2,745 +2,693 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' http://127.0.0.1:* http://localhost:* http://13.228.240.37:5000; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'">
-  <title>Cloud Governance Monitor</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' http://127.0.0.1:* http://localhost:*; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'">
+  <title>Cloud Engineer Cockpit</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #0f1117;
-      color: #e2e8f0;
       height: 100vh;
-      display: flex;
-      flex-direction: column;
       overflow: hidden;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #101112;
+      color: #edf2f4;
     }
-
-    .titlebar {
-      height: 38px;
-      background: #0a0d14;
-      display: flex;
-      align-items: center;
-      padding: 0 16px;
-      -webkit-app-region: drag;
-      border-bottom: 1px solid #1e2433;
-      gap: 8px;
-      flex-shrink: 0;
-    }
-
-    .titlebar-dot { width: 12px; height: 12px; border-radius: 50%; }
-    .dot-red { background: #ff5f57; }
-    .dot-yellow { background: #ffbd2e; }
-    .dot-green { background: #28c840; }
-
-    .titlebar-title {
-      font-size: 12px;
-      color: #64748b;
-      margin-left: 8px;
-    }
-
-    .status-pill {
-      margin-left: auto;
-      font-size: 11px;
-      padding: 2px 8px;
-      border-radius: 20px;
-      background: #0d2e1f;
-      color: #22c55e;
-      border: 1px solid #166534;
-    }
-
-    .content {
-      flex: 1;
+    .shell {
+      height: 100vh;
       display: grid;
-      grid-template-columns: 220px 1fr;
-      overflow: hidden;
+      grid-template-columns: 248px 1fr;
     }
-
     .sidebar {
-      background: #0a0d14;
-      border-right: 1px solid #1e2433;
-      padding: 16px 0;
+      background: #151312;
+      border-right: 1px solid #2a2520;
       display: flex;
       flex-direction: column;
-      overflow-y: auto;
+      min-width: 0;
     }
-
-    .sidebar-section {
-      padding: 0 12px;
-      margin-bottom: 4px;
-      font-size: 10px;
-      color: #475569;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      margin-top: 16px;
-    }
-
-    .nav-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 16px;
-      font-size: 13px;
-      color: #94a3b8;
-      cursor: default;
-      transition: background 0.15s;
-    }
-
-    .nav-item:hover { background: #161b27; color: #e2e8f0; }
-    .nav-item.active { background: #1a2035; color: #60a5fa; border-right: 2px solid #3b82f6; }
-    .nav-dot { width: 6px; height: 6px; border-radius: 50%; }
-
-    .main {
-      overflow-y: auto;
-      padding: 20px;
-      background: #0f1117;
-    }
-
-    .grid4 {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
-      margin-bottom: 16px;
-    }
-
-    .grid2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-bottom: 16px;
-    }
-
-    .card {
-      background: #141824;
-      border: 1px solid #1e2433;
-      border-radius: 8px;
+    .brand {
+      height: 72px;
       padding: 16px;
+      border-bottom: 1px solid #2a2520;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 5px;
     }
-
-    .card-label {
-      font-size: 10px;
-      color: #64748b;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      margin-bottom: 8px;
+    .brand h1 {
+      font-size: 15px;
+      font-weight: 650;
+      letter-spacing: 0;
     }
-
-    .metric-big {
-      font-size: 28px;
-      font-weight: 500;
-      line-height: 1;
-      word-break: break-word;
-    }
-
-    .metric-sub { font-size: 12px; color: #64748b; margin-top: 4px; }
-    .green { color: #22c55e; }
-    .amber { color: #f59e0b; }
-    .red { color: #ef4444; }
-    .blue { color: #60a5fa; }
-
-    .bar-wrap { margin-top: 10px; }
-    .bar-label { display: flex; justify-content: space-between; font-size: 11px; color: #64748b; margin-bottom: 4px; }
-    .bar-track { height: 5px; background: #1e2433; border-radius: 3px; overflow: hidden; }
-    .bar-fill { height: 100%; border-radius: 3px; transition: width 0.8s ease; }
-
-    .mini-chart { display: flex; align-items: flex-end; gap: 3px; height: 44px; margin-top: 10px; }
-    .mini-bar { flex: 1; border-radius: 2px 2px 0 0; min-height: 3px; transition: height 0.3s; }
-
-    .incident-row {
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      align-items: center;
-      gap: 10px;
-      padding: 8px 0;
-      border-bottom: 1px solid #1e2433;
-      font-size: 12px;
-    }
-    .incident-row:last-child { border-bottom: none; }
-
-    .badge {
-      font-size: 10px;
-      padding: 2px 7px;
-      border-radius: 4px;
-      font-weight: 500;
+    .brand small, .meta {
+      color: #8a9299;
+      font-size: 11px;
+      overflow: hidden;
+      text-overflow: ellipsis;
       white-space: nowrap;
     }
-    .badge-ok { background: #0d2e1f; color: #22c55e; }
-    .badge-cpu { background: #2d1f00; color: #f59e0b; }
-    .badge-stop { background: #2d0f0f; color: #ef4444; }
-
-    .infra-row,
-    .lambda-row {
+    .nav {
+      padding: 12px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      overflow-y: auto;
+    }
+    .nav button {
+      border: 0;
+      color: #b6c1ca;
+      background: transparent;
+      text-align: left;
+      padding: 10px 12px;
+      border-radius: 7px;
+      font-size: 13px;
+      display: grid;
+      grid-template-columns: 8px 1fr auto;
+      align-items: center;
+      gap: 10px;
+      cursor: default;
+    }
+    .nav button:hover { background: #211d19; color: #f6f7f8; }
+    .nav button.active {
+      background: #20322b;
+      color: #f8fffb;
+      box-shadow: inset 0 0 0 1px #2e6f52;
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #4dbd8b; }
+    .nav .count { color: #8a9299; font-size: 11px; }
+    .sidebar-footer {
+      margin-top: auto;
+      padding: 14px 16px;
+      border-top: 1px solid #2a2520;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .main {
+      min-width: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      background:
+        radial-gradient(circle at top left, rgba(77, 189, 139, 0.14), transparent 32%),
+        linear-gradient(135deg, #111315, #14110f 48%, #101112);
+    }
+    .topbar {
+      min-height: 72px;
+      padding: 14px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      -webkit-app-region: drag;
+    }
+    .title-block { min-width: 0; }
+    .title-block h2 {
+      font-size: 21px;
+      font-weight: 680;
+      letter-spacing: 0;
+      margin-bottom: 4px;
+    }
+    .status-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+    .pill {
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 11px;
+      color: #d9e1e7;
+      background: rgba(255, 255, 255, 0.04);
+      white-space: nowrap;
+    }
+    .pill.good { background: #123126; color: #62e0a5; border-color: #245f49; }
+    .pill.warn { background: #34270c; color: #ffc857; border-color: #6f5519; }
+    .pill.bad { background: #3b1717; color: #ff8a8a; border-color: #783232; }
+    .workspace {
+      padding: 20px 22px 28px;
+      overflow-y: auto;
+    }
+    .view { display: none; }
+    .view.active { display: block; }
+    .grid4 {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .grid3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .grid2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .panel {
+      background: rgba(24, 24, 22, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 15px;
+      min-width: 0;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
+    }
+    .metric-label {
+      color: #8a9299;
+      font-size: 11px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .metric-value {
+      font-size: 30px;
+      line-height: 1;
+      font-weight: 680;
+      word-break: break-word;
+    }
+    .metric-sub { color: #8a9299; font-size: 12px; margin-top: 7px; }
+    .green { color: #62e0a5; }
+    .amber { color: #ffc857; }
+    .red { color: #ff8a8a; }
+    .cyan { color: #7fd7ff; }
+    .section-title {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 10px;
-      padding: 7px 0;
-      border-bottom: 1px solid #1e2433;
-      font-size: 12px;
+      margin-bottom: 12px;
+      color: #dce5ea;
+      font-size: 13px;
+      font-weight: 650;
     }
-    .infra-row:last-child,
-    .lambda-row:last-child { border-bottom: none; }
-    .infra-id { font-size: 11px; color: #64748b; font-family: monospace; margin-top: 2px; }
-    .lambda-name { font-family: monospace; color: #94a3b8; }
-
-    .score-wrap {
-      display: grid;
-      grid-template-columns: 120px 1fr;
-      gap: 16px;
-      align-items: center;
-    }
-
-    .score-ring {
-      width: 108px;
-      height: 108px;
-      border-radius: 50%;
-      display: grid;
-      place-items: center;
-      background: conic-gradient(#22c55e 0deg, #1e2433 0deg);
-      position: relative;
-    }
-
-    .score-ring::before {
-      content: '';
-      position: absolute;
-      width: 82px;
-      height: 82px;
-      border-radius: 50%;
-      background: #141824;
-    }
-
-    .score-ring span {
-      position: relative;
-      font-size: 28px;
-      font-weight: 600;
-      color: #e2e8f0;
-    }
-
-    .score-row,
-    .action-row,
-    .policy-row,
-    .drift-row {
+    .list { display: flex; flex-direction: column; gap: 8px; }
+    .row {
       display: grid;
       grid-template-columns: auto 1fr auto;
       align-items: center;
       gap: 10px;
-      padding: 7px 0;
-      border-bottom: 1px solid #1e2433;
+      min-height: 36px;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
       font-size: 12px;
     }
-
-    .score-row:last-child,
-    .action-row:last-child,
-    .policy-row:last-child,
-    .drift-row:last-child { border-bottom: none; }
-
-    .mini-track {
-      height: 5px;
-      background: #1e2433;
-      border-radius: 3px;
-      overflow: hidden;
-    }
-
-    .mini-fill {
-      height: 100%;
-      background: #60a5fa;
-      border-radius: 3px;
-    }
-
-    .status-pass { background: #0d2e1f; color: #22c55e; }
-    .status-warn { background: #2d1f00; color: #f59e0b; }
-    .status-fail { background: #2d0f0f; color: #ef4444; }
-    .status-watch { background: #0c1e3d; color: #60a5fa; }
-
-    .report-box {
-      height: 160px;
-      overflow: auto;
-      white-space: pre-wrap;
-      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-      font-size: 11px;
-      line-height: 1.45;
-      color: #94a3b8;
-      background: #0f1117;
-      border: 1px solid #1e2433;
-      border-radius: 6px;
-      padding: 10px;
-    }
-
-    .pill {
+    .row:last-child { border-bottom: 0; }
+    .row strong { font-weight: 650; }
+    .row .detail { color: #8a9299; font-size: 11px; margin-top: 3px; }
+    .badge {
+      min-width: 56px;
+      text-align: center;
+      padding: 3px 7px;
+      border-radius: 5px;
       font-size: 10px;
-      padding: 2px 8px;
-      border-radius: 20px;
-      white-space: nowrap;
+      text-transform: uppercase;
+      background: #233029;
+      color: #62e0a5;
     }
-    .pill-green { background: #0d2e1f; color: #22c55e; }
-    .pill-blue { background: #0c1e3d; color: #60a5fa; }
-
-    .refresh-time {
-      font-size: 11px;
-      color: #64748b;
-      text-align: right;
-      margin-bottom: 12px;
+    .badge.warn { background: #3a2b11; color: #ffc857; }
+    .badge.bad { background: #3b1717; color: #ff8a8a; }
+    .badge.info { background: #153144; color: #7fd7ff; }
+    .score-ring {
+      width: 138px;
+      height: 138px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: conic-gradient(#62e0a5 0deg, #2b2d30 0deg);
+      position: relative;
+      margin: 8px auto 16px;
     }
-
-    .section-head {
-      font-size: 13px;
-      font-weight: 500;
-      color: #94a3b8;
-      margin-bottom: 12px;
+    .score-ring:before {
+      content: "";
+      position: absolute;
+      width: 104px;
+      height: 104px;
+      border-radius: 50%;
+      background: #181816;
+    }
+    .score-ring span {
+      position: relative;
+      font-size: 34px;
+      font-weight: 720;
+    }
+    .bar {
+      height: 7px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: #2b2d30;
+      margin-top: 7px;
+    }
+    .bar > div {
+      height: 100%;
+      width: 0%;
+      background: #62e0a5;
+      border-radius: 999px;
+      transition: width 0.3s ease;
+    }
+    .timeline {
+      position: relative;
       display: flex;
-      align-items: center;
-      gap: 6px;
+      flex-direction: column;
+      gap: 10px;
     }
-
-    .muted { color: #64748b; }
-    ::-webkit-scrollbar { width: 4px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #1e2433; border-radius: 2px; }
+    .timeline-item {
+      display: grid;
+      grid-template-columns: 12px 1fr;
+      gap: 10px;
+      align-items: start;
+      font-size: 12px;
+    }
+    .timeline-mark {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #62e0a5;
+      margin-top: 4px;
+    }
+    .topology {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .node {
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 12px;
+      background: #141817;
+      min-height: 78px;
+    }
+    .node-type { color: #8a9299; font-size: 11px; margin-bottom: 8px; text-transform: uppercase; }
+    .node-label { font-weight: 650; font-size: 13px; word-break: break-word; }
+    .node-status { color: #62e0a5; font-size: 11px; margin-top: 8px; }
+    .runbook {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    }
+    .runbook:last-child { border-bottom: 0; }
+    .runbook h3 { font-size: 14px; margin-bottom: 6px; }
+    .runbook p, .steps { color: #a7b0b8; font-size: 12px; line-height: 1.45; }
+    .steps { margin-top: 8px; padding-left: 18px; }
+    .report {
+      width: 100%;
+      min-height: 420px;
+      resize: vertical;
+      background: #111315;
+      color: #dce5ea;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 14px;
+      font-family: Consolas, "SFMono-Regular", monospace;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .empty { color: #8a9299; font-size: 12px; padding: 8px 0; }
+    @media (max-width: 980px) {
+      .shell { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .grid4, .grid3, .grid2, .topology { grid-template-columns: 1fr; }
+      .topbar { align-items: flex-start; flex-direction: column; }
+    }
   </style>
 </head>
 <body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Cloud Engineer Cockpit</h1>
+        <small id="backend-url">http://127.0.0.1:5000</small>
+      </div>
+      <nav class="nav" id="nav">
+        <button class="active" data-view="command"><span class="dot"></span><span>Command Center</span><span class="count" id="nav-score">--</span></button>
+        <button data-view="triage"><span class="dot" style="background:#ff8a8a"></span><span>Incident Triage</span><span class="count" id="nav-incidents">--</span></button>
+        <button data-view="cost"><span class="dot" style="background:#ffc857"></span><span>Cost Guard</span><span class="count" id="nav-cost">--</span></button>
+        <button data-view="drift"><span class="dot" style="background:#7fd7ff"></span><span>Drift Radar</span><span class="count" id="nav-drift">--</span></button>
+        <button data-view="runbooks"><span class="dot" style="background:#b48cff"></span><span>Runbook Studio</span><span class="count" id="nav-runbooks">--</span></button>
+        <button data-view="security"><span class="dot" style="background:#ff9f7f"></span><span>Security & IAM</span><span class="count" id="nav-security">--</span></button>
+        <button data-view="evidence"><span class="dot" style="background:#62e0a5"></span><span>Evidence Report</span><span class="count">MD</span></button>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="meta" id="mode-label">mode: loading</div>
+        <div class="meta" id="refresh-label">refresh: 60s</div>
+      </div>
+    </aside>
 
-<div class="titlebar">
-  <div class="titlebar-dot dot-red"></div>
-  <div class="titlebar-dot dot-yellow"></div>
-  <div class="titlebar-dot dot-green"></div>
-  <span class="titlebar-title">cloud-governance-monitor - <span id="region-label">ap-southeast-1</span></span>
-  <span class="status-pill" id="system-status">healthy</span>
-</div>
+    <main class="main">
+      <header class="topbar">
+        <div class="title-block">
+          <h2 id="page-title">Command Center</h2>
+          <div class="meta" id="page-subtitle">Zero-cost local workbench for cloud operations.</div>
+        </div>
+        <div class="status-strip">
+          <span class="pill good" id="health-pill">loading</span>
+          <span class="pill" id="region-pill">region</span>
+          <span class="pill" id="updated-pill">not refreshed</span>
+        </div>
+      </header>
 
-<div class="content">
-  <div class="sidebar">
-    <div class="sidebar-section">Overview</div>
-    <div class="nav-item active"><div class="nav-dot" style="background:#22c55e"></div> Dashboard</div>
-    <div class="sidebar-section">Infrastructure</div>
-    <div class="nav-item"><div class="nav-dot" style="background:#60a5fa"></div> EC2 Instance</div>
-    <div class="nav-item"><div class="nav-dot" style="background:#a78bfa"></div> DynamoDB</div>
-    <div class="nav-item"><div class="nav-dot" style="background:#f59e0b"></div> CloudWatch</div>
-    <div class="sidebar-section">Automation</div>
-    <div class="nav-item"><div class="nav-dot" style="background:#22c55e"></div> Self-Healing</div>
-    <div class="nav-item"><div class="nav-dot" style="background:#f97316"></div> FinOps</div>
-    <div class="sidebar-section">Backend</div>
-    <div class="nav-item" style="margin-top:auto">
-      <div class="nav-dot" style="background:#475569"></div>
-      <span id="backend-url">loading...</span>
-    </div>
+      <section class="workspace">
+        <section class="view active" id="view-command">
+          <div class="grid4">
+            <div class="panel"><div class="metric-label">Health</div><div class="metric-value green" id="metric-health">--</div><div class="metric-sub" id="metric-health-sub">local-first</div></div>
+            <div class="panel"><div class="metric-label">Governance Score</div><div class="metric-value green" id="metric-score">--</div><div class="metric-sub" id="metric-grade">Grade</div></div>
+            <div class="panel"><div class="metric-label">Cost Risks</div><div class="metric-value amber" id="metric-cost">--</div><div class="metric-sub">Zero-cost guardrail</div></div>
+            <div class="panel"><div class="metric-label">Security Findings</div><div class="metric-value cyan" id="metric-security">--</div><div class="metric-sub">Static IAM/Terraform scan</div></div>
+          </div>
+          <div class="grid3">
+            <div class="panel">
+              <div class="section-title"><span>Scorecard</span><span class="pill" id="score-mode">mock</span></div>
+              <div class="score-ring" id="score-ring"><span id="score-ring-text">--</span></div>
+              <div class="list" id="category-list"></div>
+            </div>
+            <div class="panel">
+              <div class="section-title"><span>Priority Actions</span><span class="pill warn" id="action-count">--</span></div>
+              <div class="list" id="action-list"></div>
+            </div>
+            <div class="panel">
+              <div class="section-title"><span>Timeline</span><span class="pill" id="timeline-count">--</span></div>
+              <div class="timeline" id="timeline-list"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="view-triage">
+          <div class="grid2">
+            <div class="panel">
+              <div class="section-title"><span>Incident Priority</span><span class="pill bad" id="incident-total">--</span></div>
+              <div class="list" id="incident-list"></div>
+            </div>
+            <div class="panel">
+              <div class="section-title"><span>Next Runbook</span><span class="pill info">dry-run</span></div>
+              <div class="list" id="incident-runbook"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="view-cost">
+          <div class="panel">
+            <div class="section-title"><span>Cost Guard</span><span class="pill" id="cost-status">--</span></div>
+            <div class="list" id="cost-list"></div>
+          </div>
+        </section>
+
+        <section class="view" id="view-drift">
+          <div class="grid2">
+            <div class="panel">
+              <div class="section-title"><span>Drift Checks</span><span class="pill info" id="drift-status">--</span></div>
+              <div class="list" id="drift-list"></div>
+            </div>
+            <div class="panel">
+              <div class="section-title"><span>Topology Map</span><span class="pill" id="topology-count">--</span></div>
+              <div class="topology" id="topology-grid"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="view-runbooks">
+          <div class="panel">
+            <div class="section-title"><span>Runbook Studio</span><span class="pill good">local dry-run</span></div>
+            <div id="runbook-list"></div>
+          </div>
+        </section>
+
+        <section class="view" id="view-security">
+          <div class="panel">
+            <div class="section-title"><span>Security & IAM Review</span><span class="pill warn" id="security-status">--</span></div>
+            <div class="list" id="security-list"></div>
+          </div>
+        </section>
+
+        <section class="view" id="view-evidence">
+          <div class="panel">
+            <div class="section-title"><span>Evidence Report</span><span class="pill good">portfolio-ready</span></div>
+            <textarea class="report" id="report-box" spellcheck="false">Loading report...</textarea>
+          </div>
+        </section>
+      </section>
+    </main>
   </div>
 
-  <div class="main">
-    <div class="refresh-time" id="refresh-time">Loading live data...</div>
+  <script>
+    const cloudApi = window.api || {
+      baseUrl: 'http://127.0.0.1:5000',
+      config: { region: 'ap-southeast-1', refreshIntervalMs: 60000 },
+      getCockpitSummary: async () => ({
+        mode: 'preview',
+        generated_at: new Date().toISOString(),
+        health: { status: 'preview', ec2: 'mock', cpu: 0, cpu_status: 'ok' },
+        score: { overall: 0, grade: 'N/A', categories: {}, recommended_actions: [] },
+        incidents: { count: 0, incidents: [] },
+        cost_guard: { status: 'free-safe', risk_count: 0, checks: [] },
+        security: { status: 'clean', risk_count: 0, risks: [] },
+        drift: { status: 'clean', checks: [] },
+        timeline: []
+      }),
+      getCostGuard: async () => ({ status: 'free-safe', risk_count: 0, checks: [], mode: 'preview' }),
+      getSecurityRisks: async () => ({ status: 'clean', risk_count: 0, risks: [], mode: 'preview' }),
+      getRunbooks: async () => ({ runbooks: [], count: 0, mode: 'preview' }),
+      getTopology: async () => ({ nodes: [], links: [], mode: 'preview' }),
+      getEvidenceReport: async () => ({ markdown: 'Report unavailable.', mode: 'preview' })
+    }
 
-    <div class="grid4">
-      <div class="card">
-        <div class="card-label">System status</div>
-        <div class="metric-big green" id="ec2-status">--</div>
-        <div class="metric-sub">EC2 t3.micro</div>
-      </div>
-      <div class="card">
-        <div class="card-label">CPU usage</div>
-        <div class="metric-big" id="cpu-val">--</div>
-        <div class="metric-sub" id="cpu-sub">Loading...</div>
-        <div class="bar-wrap">
-          <div class="bar-track"><div class="bar-fill" id="cpu-bar" style="width:0%;background:#22c55e"></div></div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-label">Auto-healed</div>
-        <div class="metric-big blue" id="heal-count">--</div>
-        <div class="metric-sub">Lambda invocations</div>
-      </div>
-      <div class="card">
-        <div class="card-label">Governance score</div>
-        <div class="metric-big green" id="overall-score">--</div>
-        <div class="metric-sub" id="overall-grade">Cloud Engineer Assistant</div>
-      </div>
-    </div>
+    const state = {
+      summary: null,
+      cost: null,
+      security: null,
+      runbooks: null,
+      topology: null,
+      evidence: null
+    }
 
-    <div class="grid2">
-      <div class="card">
-        <div class="section-head">Cloud Engineer Assistant</div>
-        <div class="score-wrap">
-          <div class="score-ring" id="score-ring"><span id="score-ring-text">--</span></div>
-          <div id="category-scores">
-            <div class="score-row"><span class="muted">Loading scorecard...</span><div></div><span></span></div>
-          </div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="section-head">Recommended actions</div>
-        <div id="action-list">
-          <div class="action-row"><span class="badge badge-ok">OK</span><span>Loading recommendations...</span><span></span></div>
-        </div>
-      </div>
-    </div>
+    const refreshIntervalMs = Number(cloudApi.config.refreshIntervalMs || 60000)
+    document.getElementById('backend-url').textContent = cloudApi.baseUrl
+    document.getElementById('region-pill').textContent = cloudApi.config.region || 'local'
+    document.getElementById('refresh-label').textContent = 'refresh: ' + Math.round(refreshIntervalMs / 1000) + 's'
 
-    <div class="grid2">
-      <div class="card">
-        <div class="section-head">Policy checks</div>
-        <div id="policy-list">
-          <div class="policy-row"><span class="badge badge-ok">OK</span><span>Loading policy checks...</span><span></span></div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="section-head">Drift detector</div>
-        <div id="drift-list">
-          <div class="drift-row"><span class="badge badge-ok">OK</span><span>Loading drift status...</span><span></span></div>
-        </div>
-      </div>
-    </div>
+    const titles = {
+      command: ['Command Center', 'Executive view of health, score, cost, security, and timeline.'],
+      triage: ['Incident Triage', 'Prioritize incidents and jump to the right dry-run runbook.'],
+      cost: ['Cost Guard', 'Keep the project zero-cost by flagging risky cloud settings.'],
+      drift: ['Drift Radar', 'Compare desired posture with observed state and topology.'],
+      runbooks: ['Runbook Studio', 'Operational checklists for repeatable cloud engineer work.'],
+      security: ['Security & IAM Review', 'Static review for broad IAM and public network exposure.'],
+      evidence: ['Evidence Report', 'Markdown evidence for portfolio, demos, and handoff notes.']
+    }
 
-    <div class="grid2">
-      <div class="card">
-        <div class="section-head">CPU last readings</div>
-        <div class="mini-chart" id="cpu-chart"></div>
-        <div class="bar-wrap" style="margin-top:12px">
-          <div class="bar-label"><span>Current</span><span id="cpu-pct2">0%</span></div>
-          <div class="bar-track"><div class="bar-fill" id="cpu-bar2" style="width:0%;background:#22c55e"></div></div>
-        </div>
-        <div class="bar-wrap">
-          <div class="bar-label"><span>Alarm threshold</span><span>70%</span></div>
-          <div class="bar-track"><div class="bar-fill" style="width:70%;background:#f59e0b"></div></div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="section-head">Lambda functions</div>
-        <div class="lambda-row">
-          <span class="lambda-name">self-healing</span>
-          <span>Invocations: <span id="sh-inv" class="blue">--</span></span>
-        </div>
-        <div class="lambda-row">
-          <span class="lambda-name">finops</span>
-          <span>Invocations: <span id="fo-inv" class="blue">--</span></span>
-        </div>
-        <div class="bar-wrap" style="margin-top:12px">
-          <div class="bar-label"><span>Self-healing health</span><span>100%</span></div>
-          <div class="bar-track"><div class="bar-fill" style="width:100%;background:#22c55e"></div></div>
-        </div>
-        <div class="bar-wrap">
-          <div class="bar-label"><span>FinOps health</span><span>100%</span></div>
-          <div class="bar-track"><div class="bar-fill" style="width:100%;background:#60a5fa"></div></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="grid2">
-      <div class="card">
-        <div class="section-head">Incident priority</div>
-        <div id="priority-list">
-          <div class="incident-row">
-            <span class="badge badge-ok">OK</span>
-            <span>Loading incident priorities...</span>
-            <span class="muted">DynamoDB</span>
-          </div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="section-head">Infrastructure</div>
-        <div class="infra-row">
-          <div><div>cloud-governance-app</div><div class="infra-id" id="instance-id">loading...</div></div>
-          <span class="pill pill-green" id="ec2-pill">--</span>
-        </div>
-        <div class="infra-row">
-          <div><div>cloud-governance-vpc</div><div class="infra-id" id="vpc-id">loading...</div></div>
-          <span class="pill pill-green">active</span>
-        </div>
-        <div class="infra-row">
-          <div><div>incident-log table</div><div class="infra-id">DynamoDB / PAY_PER_REQUEST</div></div>
-          <span class="pill pill-green">active</span>
-        </div>
-        <div class="infra-row">
-          <div><div id="endpoint-label">backend endpoint</div><div class="infra-id">Flask API / configurable</div></div>
-          <span class="pill pill-blue">config</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="grid2">
-      <div class="card">
-        <div class="section-head">Incident log</div>
-        <div id="incident-list">
-          <div class="incident-row">
-            <span class="badge badge-ok">OK</span>
-            <span>Loading incidents...</span>
-            <span class="muted">DynamoDB</span>
-          </div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="section-head">Governance report</div>
-        <div class="report-box" id="report-box">Loading report...</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script>
-const cloudApi = window.api || {
-  baseUrl: 'Electron preload unavailable',
-  config: {
-    region: 'ap-southeast-1',
-    instanceId: 'i-0327c7e7774cbc046',
-    vpcId: 'vpc-06e9c3d4332fcb893',
-    publicEndpoint: 'http://13.228.240.37:5000'
-  },
-  getCpu: async () => ({ current: 0, history: [], status: 'offline', mode: 'preview' }),
-  getStatus: async () => ({ ec2: 'offline', mode: 'preview' }),
-  getLambdaStats: async () => ({ self_healing: { invocations: 0 }, finops: { invocations: 0 }, mode: 'preview' }),
-  getIncidents: async () => ({ count: 0, incidents: [], mode: 'preview' }),
-  getGovernanceScore: async () => ({
-    overall: 0,
-    grade: 'N/A',
-    categories: {},
-    recommended_actions: [],
-    findings: [],
-    mode: 'preview'
-  }),
-  getPolicyChecks: async () => ({ checks: [], count: 0, warnings: 0, failing: 0, mode: 'preview' }),
-  getDrift: async () => ({ status: 'offline', checks: [], mode: 'preview' }),
-  getIncidentPriority: async () => ({ count: 0, incidents: [], mode: 'preview' }),
-  getReport: async () => ({ markdown: 'Report unavailable in static preview.', mode: 'preview' }),
-  getAssistantSummary: async () => ({
-    score: {
-      overall: 0,
-      grade: 'N/A',
-      categories: {},
-      recommended_actions: [],
-      findings: []
-    },
-    policies: [],
-    drift: { status: 'offline', checks: [] },
-    incidents: { count: 0, incidents: [] },
-    mode: 'preview'
-  })
-}
-
-document.getElementById('backend-url').textContent = cloudApi.baseUrl
-document.getElementById('region-label').textContent = cloudApi.config.region || 'ap-southeast-1'
-document.getElementById('instance-id').textContent = (cloudApi.config.instanceId || 'unknown') + ' / t3.micro'
-document.getElementById('vpc-id').textContent = cloudApi.config.vpcId || 'unknown'
-document.getElementById('endpoint-label').textContent = cloudApi.baseUrl
-const refreshIntervalMs = Number(cloudApi.config.refreshIntervalMs || 60000)
-
-function setCpuState(cpuVal, status, mode) {
-  const stateClass = cpuVal > 70 ? 'red' : cpuVal > 50 ? 'amber' : 'green'
-  const stateColor = cpuVal > 70 ? '#ef4444' : cpuVal > 50 ? '#f59e0b' : '#22c55e'
-
-  document.getElementById('cpu-val').textContent = cpuVal + '%'
-  document.getElementById('cpu-val').className = 'metric-big ' + stateClass
-  document.getElementById('cpu-sub').textContent = 'Status: ' + (status || 'ok') + ' / ' + (mode || 'unknown')
-  document.getElementById('cpu-bar').style.width = cpuVal + '%'
-  document.getElementById('cpu-bar').style.background = stateColor
-  document.getElementById('cpu-pct2').textContent = cpuVal + '%'
-  document.getElementById('cpu-bar2').style.width = cpuVal + '%'
-  document.getElementById('cpu-bar2').style.background = stateColor
-}
-
-function renderCpuChart(history) {
-  const chart = document.getElementById('cpu-chart')
-  chart.innerHTML = ''
-  const points = history.length ? history : [0]
-  const max = Math.max(...points, 10)
-
-  points.forEach((value) => {
-    const bar = document.createElement('div')
-    bar.className = 'mini-bar'
-    bar.style.height = Math.max(3, Math.round((value / max) * 44)) + 'px'
-    bar.style.background = value > 70 ? '#ef4444' : value > 50 ? '#f59e0b' : '#22c55e'
-    chart.appendChild(bar)
-  })
-}
-
-function renderIncidents(incidents) {
-  const list = document.getElementById('incident-list')
-
-  if (!incidents.count) {
-    list.innerHTML = '<div class="incident-row"><span class="badge badge-ok">OK</span><span class="muted">No recent incidents</span><span class="muted">DynamoDB</span></div>'
-    return
-  }
-
-  list.innerHTML = incidents.incidents.slice(0, 5).map((incident) => {
-    const type = incident.incident_type || 'EVENT'
-    const badgeClass = type === 'HIGH_CPU' ? 'badge-cpu' : 'badge-stop'
-    const instanceId = incident.instance_id || 'unknown'
-    const action = incident.action_taken || 'recorded'
-
-    return `
-      <div class="incident-row">
-        <span class="badge ${badgeClass}">${type}</span>
-        <span>${instanceId}</span>
-        <span class="muted">${action}</span>
-      </div>
-    `
-  }).join('')
-}
-
-function statusClass(status) {
-  if (status === 'pass' || status === 'clean') return 'status-pass'
-  if (status === 'fail' || status === 'drift') return 'status-fail'
-  if (status === 'watch') return 'status-watch'
-  return 'status-warn'
-}
-
-function renderScore(score) {
-  const overall = score.overall ?? 0
-  const degrees = Math.max(0, Math.min(100, overall)) * 3.6
-  const ringColor = overall >= 85 ? '#22c55e' : overall >= 70 ? '#f59e0b' : '#ef4444'
-
-  document.getElementById('overall-score').textContent = overall
-  document.getElementById('overall-score').className = 'metric-big ' + (overall >= 85 ? 'green' : overall >= 70 ? 'amber' : 'red')
-  document.getElementById('overall-grade').textContent = 'Grade ' + (score.grade || 'N/A') + ' / ' + (score.mode || 'unknown')
-  document.getElementById('score-ring').style.background = `conic-gradient(${ringColor} ${degrees}deg, #1e2433 0deg)`
-  document.getElementById('score-ring-text').textContent = overall
-
-  const categories = Object.entries(score.categories || {})
-  document.getElementById('category-scores').innerHTML = categories.length
-    ? categories.map(([key, item]) => `
-      <div class="score-row">
-        <span>${item.label || key}</span>
-        <div class="mini-track"><div class="mini-fill" style="width:${item.score || 0}%;background:${(item.score || 0) >= 85 ? '#22c55e' : (item.score || 0) >= 70 ? '#f59e0b' : '#ef4444'}"></div></div>
-        <span>${item.score || 0}</span>
-      </div>
-    `).join('')
-    : '<div class="score-row"><span class="muted">No score data</span><div></div><span></span></div>'
-
-  const actions = score.recommended_actions || []
-  document.getElementById('action-list').innerHTML = actions.length
-    ? actions.map((action) => `
-      <div class="action-row">
-        <span class="badge ${statusClass(action.severity === 'high' || action.severity === 'critical' ? 'fail' : 'warn')}">${action.severity || 'info'}</span>
-        <span>${action.recommendation}</span>
-        <span class="muted">${action.title}</span>
-      </div>
-    `).join('')
-    : '<div class="action-row"><span class="badge badge-ok">OK</span><span>No priority recommendations</span><span></span></div>'
-}
-
-function renderPolicyChecks(policies) {
-  const checks = policies.checks || []
-  const visible = checks.filter((check) => check.status !== 'pass').slice(0, 7)
-  document.getElementById('policy-list').innerHTML = visible.length
-    ? visible.map((check) => `
-      <div class="policy-row">
-        <span class="badge ${statusClass(check.status)}">${check.status}</span>
-        <span>${check.title}</span>
-        <span class="muted">${check.category}</span>
-      </div>
-    `).join('')
-    : '<div class="policy-row"><span class="badge badge-ok">PASS</span><span>All visible policies passed</span><span></span></div>'
-}
-
-function renderDrift(drift) {
-  const checks = drift.checks || []
-  document.getElementById('drift-list').innerHTML = checks.length
-    ? checks.slice(0, 6).map((check) => `
-      <div class="drift-row">
-        <span class="badge ${statusClass(check.status)}">${check.status}</span>
-        <span>${check.resource}</span>
-        <span class="muted">${check.observed}</span>
-      </div>
-    `).join('')
-    : '<div class="drift-row"><span class="badge badge-ok">OK</span><span>No drift checks available</span><span></span></div>'
-}
-
-function renderPriorities(priority) {
-  const incidents = priority.incidents || []
-  document.getElementById('priority-list').innerHTML = incidents.length
-    ? incidents.slice(0, 5).map((incident) => `
-      <div class="incident-row">
-        <span class="badge ${incident.severity === 'critical' || incident.severity === 'high' ? 'badge-stop' : 'badge-cpu'}">${incident.priority_score}</span>
-        <span>${incident.incident_type}: ${incident.next_action}</span>
-        <span class="muted">${incident.severity}</span>
-      </div>
-    `).join('')
-    : '<div class="incident-row"><span class="badge badge-ok">OK</span><span>No incidents to prioritize</span><span></span></div>'
-}
-
-function renderReport(report) {
-  document.getElementById('report-box').textContent = report.markdown || 'No report available.'
-}
-
-function renderReportFromSummary(summary) {
-  const score = summary.score || {}
-  const drift = summary.drift || {}
-  const incidents = summary.incidents || { incidents: [] }
-  const actions = score.recommended_actions || []
-
-  const lines = [
-    '# Cloud Governance Report',
-    '',
-    'Mode: ' + (summary.mode || 'unknown'),
-    'Overall Score: ' + (score.overall ?? 'n/a') + ' (' + (score.grade || 'N/A') + ')',
-    '',
-    'Recommended Actions:'
-  ]
-
-  if (actions.length) {
-    actions.slice(0, 5).forEach((action) => {
-      lines.push('- [' + (action.severity || 'info').toUpperCase() + '] ' + action.recommendation)
+    document.getElementById('nav').addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-view]')
+      if (!button) return
+      const view = button.dataset.view
+      document.querySelectorAll('.nav button').forEach((item) => item.classList.toggle('active', item === button))
+      document.querySelectorAll('.view').forEach((item) => item.classList.toggle('active', item.id === 'view-' + view))
+      document.getElementById('page-title').textContent = titles[view][0]
+      document.getElementById('page-subtitle').textContent = titles[view][1]
     })
-  } else {
-    lines.push('- No priority actions.')
-  }
 
-  lines.push('', 'Drift Status: ' + (drift.status || 'unknown'), '', 'Incident Priority:')
-  if (incidents.incidents?.length) {
-    incidents.incidents.slice(0, 5).forEach((incident) => {
-      lines.push('- ' + incident.incident_type + ' / ' + incident.severity + ' / ' + incident.next_action)
-    })
-  } else {
-    lines.push('- No incidents.')
-  }
+    function badgeClass(status) {
+      if (['risk', 'fail', 'drift', 'critical', 'high', 'attention'].includes(status)) return 'bad'
+      if (['warn', 'warning', 'review', 'watch', 'medium'].includes(status)) return 'warn'
+      if (['info', 'low', 'local', 'mock'].includes(status)) return 'info'
+      return ''
+    }
 
-  renderReport({ markdown: lines.join('\n') })
-}
+    function row(badge, title, detail, right) {
+      return `
+        <div class="row">
+          <span class="badge ${badgeClass(badge)}">${badge}</span>
+          <div><strong>${title}</strong><div class="detail">${detail || ''}</div></div>
+          <span class="meta">${right || ''}</span>
+        </div>`
+    }
 
-async function fetchAll() {
-  try {
-    const [cpu, status, lambda, incidents, assistant] = await Promise.all([
-      cloudApi.getCpu(),
-      cloudApi.getStatus(),
-      cloudApi.getLambdaStats(),
-      cloudApi.getIncidents(),
-      cloudApi.getAssistantSummary()
-    ])
+    function empty(text) {
+      return `<div class="empty">${text}</div>`
+    }
 
-    const cpuVal = cpu.current || 0
-    setCpuState(cpuVal, cpu.status, cpu.mode)
-    renderCpuChart(cpu.history || [])
+    function renderSummary() {
+      const summary = state.summary
+      if (!summary) return
 
-    const ec2State = status.ec2 || 'unknown'
-    document.getElementById('ec2-status').textContent = ec2State
-    document.getElementById('ec2-status').className = 'metric-big ' + (ec2State === 'running' ? 'green' : 'red')
-    document.getElementById('ec2-pill').textContent = ec2State
-    document.getElementById('system-status').textContent = ec2State === 'running' ? 'healthy' : 'attention needed'
-    document.getElementById('system-status').style.color = ec2State === 'running' ? '#22c55e' : '#ef4444'
+      const score = summary.score || {}
+      const cost = summary.cost_guard || {}
+      const security = summary.security || {}
+      const health = summary.health || {}
+      const incidents = summary.incidents || { incidents: [] }
+      const drift = summary.drift || { checks: [] }
 
-    document.getElementById('sh-inv').textContent = lambda.self_healing?.invocations ?? 0
-    document.getElementById('fo-inv').textContent = lambda.finops?.invocations ?? 0
-    document.getElementById('heal-count').textContent = lambda.self_healing?.invocations ?? 0
+      document.getElementById('mode-label').textContent = 'mode: ' + (summary.mode || 'unknown')
+      document.getElementById('updated-pill').textContent = new Date(summary.generated_at || Date.now()).toLocaleTimeString()
+      document.getElementById('health-pill').textContent = health.status || 'unknown'
+      document.getElementById('health-pill').className = 'pill ' + (health.status === 'healthy' ? 'good' : 'warn')
+      document.getElementById('metric-health').textContent = health.status || '--'
+      document.getElementById('metric-health-sub').textContent = 'EC2 ' + (health.ec2 || 'mock') + ' / CPU ' + (health.cpu ?? 0) + '%'
+      document.getElementById('metric-score').textContent = score.overall ?? '--'
+      document.getElementById('metric-grade').textContent = 'Grade ' + (score.grade || 'N/A')
+      document.getElementById('metric-cost').textContent = cost.risk_count ?? 0
+      document.getElementById('metric-security').textContent = security.risk_count ?? 0
+      document.getElementById('nav-score').textContent = score.overall ?? '--'
+      document.getElementById('nav-incidents').textContent = incidents.count ?? 0
+      document.getElementById('nav-cost').textContent = cost.risk_count ?? 0
+      document.getElementById('nav-security').textContent = security.risk_count ?? 0
+      document.getElementById('nav-drift').textContent = drift.status || '--'
+      document.getElementById('score-mode').textContent = summary.mode || 'mock'
 
-    renderScore(assistant.score || {})
-    renderPolicyChecks({ checks: assistant.policies || [] })
-    renderDrift(assistant.drift || {})
-    renderPriorities(assistant.incidents || { incidents: [] })
-    renderIncidents(incidents)
-    renderReportFromSummary(assistant)
+      const overall = Number(score.overall || 0)
+      const ringColor = overall >= 85 ? '#62e0a5' : overall >= 70 ? '#ffc857' : '#ff8a8a'
+      document.getElementById('score-ring').style.background = `conic-gradient(${ringColor} ${overall * 3.6}deg, #2b2d30 0deg)`
+      document.getElementById('score-ring-text').textContent = overall
 
-    const now = new Date()
-    document.getElementById('refresh-time').textContent =
-      'Last updated ' + now.toLocaleTimeString() + ' / mode ' + (cpu.mode || status.mode || 'unknown') + ' / refresh every ' + Math.round(refreshIntervalMs / 1000) + ' seconds'
-  } catch (err) {
-    document.getElementById('ec2-status').textContent = 'error'
-    document.getElementById('ec2-status').className = 'metric-big red'
-    document.getElementById('system-status').textContent = 'connection error'
-    document.getElementById('system-status').style.color = '#ef4444'
-    document.getElementById('refresh-time').textContent = 'Unable to reach backend: ' + err.message
-    console.error(err)
-  }
-}
+      const categories = Object.entries(score.categories || {})
+      document.getElementById('category-list').innerHTML = categories.length
+        ? categories.map(([key, item]) => `
+          <div>
+            <div class="row"><span class="badge info">${item.score ?? 0}</span><div><strong>${item.label || key}</strong><div class="bar"><div style="width:${item.score || 0}%;background:${(item.score || 0) >= 85 ? '#62e0a5' : '#ffc857'}"></div></div></div><span></span></div>
+          </div>`).join('')
+        : empty('No score data available.')
 
-fetchAll()
-setInterval(fetchAll, refreshIntervalMs)
-</script>
+      const actions = score.recommended_actions || []
+      document.getElementById('action-count').textContent = actions.length
+      document.getElementById('action-list').innerHTML = actions.length
+        ? actions.map((action) => row(action.severity || 'info', action.title || 'Action', action.recommendation || '', '')).join('')
+        : empty('No priority actions.')
+
+      const timeline = summary.timeline || []
+      document.getElementById('timeline-count').textContent = timeline.length
+      document.getElementById('timeline-list').innerHTML = timeline.length
+        ? timeline.map((item) => `
+          <div class="timeline-item">
+            <span class="timeline-mark"></span>
+            <div><strong>${item.title}</strong><div class="detail">${item.detail}</div><div class="meta">${item.time || ''}</div></div>
+          </div>`).join('')
+        : empty('No timeline events.')
+
+      document.getElementById('incident-total').textContent = (incidents.count ?? 0) + ' event(s)'
+      document.getElementById('incident-list').innerHTML = incidents.incidents?.length
+        ? incidents.incidents.map((incident) => row(
+          incident.severity || 'low',
+          (incident.incident_type || 'EVENT') + ' - score ' + (incident.priority_score || 0),
+          (incident.root_cause_guess || 'Review event.') + ' Next: ' + (incident.next_action || ''),
+          incident.recommended_runbook_id || ''
+        )).join('')
+        : empty('No incidents requiring triage.')
+
+      renderIncidentRunbook()
+      renderDrift()
+    }
+
+    function renderIncidentRunbook() {
+      const incidents = state.summary?.incidents?.incidents || []
+      const runbooks = state.runbooks?.runbooks || []
+      const top = incidents[0]
+      if (!top) {
+        document.getElementById('incident-runbook').innerHTML = empty('No runbook needed right now.')
+        return
+      }
+      const rb = runbooks.find((item) => item.id === top.recommended_runbook_id)
+      document.getElementById('incident-runbook').innerHTML = rb
+        ? row(rb.category, rb.title, rb.steps.join(' '), rb.dry_run_only ? 'dry-run' : 'live')
+        : row('info', top.recommended_runbook_id || 'verify-health', top.next_action || 'Review event.', 'dry-run')
+    }
+
+    function renderCost() {
+      const cost = state.cost || state.summary?.cost_guard
+      if (!cost) return
+      document.getElementById('cost-status').textContent = cost.status || 'unknown'
+      document.getElementById('cost-status').className = 'pill ' + (cost.status === 'free-safe' ? 'good' : 'bad')
+      document.getElementById('cost-list').innerHTML = cost.checks?.length
+        ? cost.checks.map((check) => row(check.status, check.title, check.risk + ' Fix: ' + check.fix, check.id)).join('')
+        : empty('No cost checks available.')
+    }
+
+    function renderSecurity() {
+      const security = state.security || state.summary?.security
+      if (!security) return
+      document.getElementById('security-status').textContent = security.status || 'unknown'
+      document.getElementById('security-status').className = 'pill ' + (security.status === 'clean' ? 'good' : 'warn')
+      document.getElementById('security-list').innerHTML = security.risks?.length
+        ? security.risks.map((risk) => row(risk.severity, risk.title, risk.recommendation, risk.path)).join('')
+        : empty('No security findings.')
+    }
+
+    function renderDrift() {
+      const drift = state.summary?.drift || { checks: [] }
+      document.getElementById('drift-status').textContent = drift.status || 'unknown'
+      document.getElementById('drift-list').innerHTML = drift.checks?.length
+        ? drift.checks.map((check) => row(check.status, check.resource, 'Expected: ' + check.expected + ' / Observed: ' + check.observed, check.id)).join('')
+        : empty('No drift checks available.')
+    }
+
+    function renderTopology() {
+      const topology = state.topology || { nodes: [] }
+      document.getElementById('topology-count').textContent = (topology.nodes?.length || 0) + ' nodes'
+      document.getElementById('topology-grid').innerHTML = topology.nodes?.length
+        ? topology.nodes.map((node) => `
+          <div class="node">
+            <div class="node-type">${node.type}</div>
+            <div class="node-label">${node.label}</div>
+            <div class="node-status">${node.status}</div>
+          </div>`).join('')
+        : empty('No topology data.')
+    }
+
+    function renderRunbooks() {
+      const runbooks = state.runbooks?.runbooks || []
+      document.getElementById('nav-runbooks').textContent = runbooks.length
+      document.getElementById('runbook-list').innerHTML = runbooks.length
+        ? runbooks.map((runbook) => `
+          <div class="runbook">
+            <div>
+              <h3>${runbook.title}</h3>
+              <p>${runbook.trigger}</p>
+              <ol class="steps">${runbook.steps.map((step) => `<li>${step}</li>`).join('')}</ol>
+            </div>
+            <span class="badge ${badgeClass(runbook.category)}">${runbook.category}</span>
+          </div>`).join('')
+        : empty('No runbooks available.')
+    }
+
+    function renderEvidence() {
+      document.getElementById('report-box').value = state.evidence?.markdown || 'Report unavailable.'
+    }
+
+    async function refresh() {
+      try {
+        const [summary, cost, security, runbooks, topology, evidence] = await Promise.all([
+          cloudApi.getCockpitSummary(),
+          cloudApi.getCostGuard(),
+          cloudApi.getSecurityRisks(),
+          cloudApi.getRunbooks(),
+          cloudApi.getTopology(),
+          cloudApi.getEvidenceReport()
+        ])
+        state.summary = summary
+        state.cost = cost
+        state.security = security
+        state.runbooks = runbooks
+        state.topology = topology
+        state.evidence = evidence
+        renderSummary()
+        renderCost()
+        renderSecurity()
+        renderTopology()
+        renderRunbooks()
+        renderEvidence()
+      } catch (error) {
+        document.getElementById('health-pill').textContent = 'connection error'
+        document.getElementById('health-pill').className = 'pill bad'
+        document.getElementById('updated-pill').textContent = error.message
+        console.error(error)
+      }
+    }
+
+    refresh()
+    setInterval(refresh, refreshIntervalMs)
+  </script>
 </body>
 </html>

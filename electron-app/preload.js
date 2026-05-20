@@ -5,9 +5,9 @@ const path = require('path')
 const DEFAULT_CONFIG = {
   baseUrl: 'http://127.0.0.1:5000',
   region: 'ap-southeast-1',
-  instanceId: 'i-0327c7e7774cbc046',
-  vpcId: 'vpc-06e9c3d4332fcb893',
-  publicEndpoint: 'http://13.228.240.37:5000',
+  instanceId: null,
+  vpcId: null,
+  publicEndpoint: null,
   refreshIntervalMs: 60000
 }
 
@@ -58,5 +58,11 @@ contextBridge.exposeInMainWorld('api', {
   getDrift: () => getJson('/api/drift'),
   getIncidentPriority: () => getJson('/api/incident-priority'),
   getReport: () => getJson('/api/report'),
-  getAssistantSummary: () => getJson('/api/assistant-summary')
+  getAssistantSummary: () => getJson('/api/assistant-summary'),
+  getCockpitSummary: () => getJson('/api/cockpit-summary'),
+  getCostGuard: () => getJson('/api/cost-guard'),
+  getSecurityRisks: () => getJson('/api/security-risks'),
+  getRunbooks: () => getJson('/api/runbooks'),
+  getTopology: () => getJson('/api/topology'),
+  getEvidenceReport: () => getJson('/api/evidence-report')
 })

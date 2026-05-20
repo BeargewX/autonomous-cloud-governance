@@ -25,7 +25,7 @@ variable "vpc_cidr" {
 variable "enable_public_ipv4" {
   description = "Attach a public IPv4/Elastic IP to the EC2 demo app. Public IPv4 has hourly AWS cost, so disable this outside live demos."
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "enable_public_ssh" {
@@ -37,7 +37,7 @@ variable "enable_public_ssh" {
 variable "enable_vpc_flow_logs" {
   description = "Enable VPC Flow Logs. Useful for governance demos, but can create CloudWatch Logs cost if traffic is high."
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "ec2_cpu_credits" {
