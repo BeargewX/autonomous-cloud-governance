@@ -50,13 +50,13 @@ resource "aws_iam_role_policy" "lambda_policy" {
         Resource = aws_dynamodb_table.incident_log.arn
       },
       {
-        Effect = "Allow"
-        Action = ["sns:Publish"]
+        Effect   = "Allow"
+        Action   = ["sns:Publish"]
         Resource = aws_sns_topic.alerts.arn
       },
       {
-        Effect = "Allow"
-        Action = ["cloudwatch:GetMetricStatistics"]
+        Effect   = "Allow"
+        Action   = ["cloudwatch:GetMetricStatistics"]
         Resource = "*"
       },
       {

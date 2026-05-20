@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' http://13.228.240.37:5000; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'">
@@ -83,14 +83,12 @@
       padding: 8px 16px;
       font-size: 13px;
       color: #94a3b8;
-      cursor: pointer;
-      border-radius: 0;
+      cursor: default;
       transition: background 0.15s;
     }
 
     .nav-item:hover { background: #161b27; color: #e2e8f0; }
     .nav-item.active { background: #1a2035; color: #60a5fa; border-right: 2px solid #3b82f6; }
-
     .nav-dot { width: 6px; height: 6px; border-radius: 50%; }
 
     .main {
@@ -116,13 +114,13 @@
     .card {
       background: #141824;
       border: 1px solid #1e2433;
-      border-radius: 10px;
+      border-radius: 8px;
       padding: 16px;
     }
 
     .card-label {
       font-size: 10px;
-      color: #475569;
+      color: #64748b;
       text-transform: uppercase;
       letter-spacing: 0.08em;
       margin-bottom: 8px;
@@ -132,16 +130,17 @@
       font-size: 28px;
       font-weight: 500;
       line-height: 1;
+      word-break: break-word;
     }
 
-    .metric-sub { font-size: 12px; color: #475569; margin-top: 4px; }
+    .metric-sub { font-size: 12px; color: #64748b; margin-top: 4px; }
     .green { color: #22c55e; }
     .amber { color: #f59e0b; }
     .red { color: #ef4444; }
     .blue { color: #60a5fa; }
 
     .bar-wrap { margin-top: 10px; }
-    .bar-label { display: flex; justify-content: space-between; font-size: 11px; color: #475569; margin-bottom: 4px; }
+    .bar-label { display: flex; justify-content: space-between; font-size: 11px; color: #64748b; margin-bottom: 4px; }
     .bar-track { height: 5px; background: #1e2433; border-radius: 3px; overflow: hidden; }
     .bar-fill { height: 100%; border-radius: 3px; transition: width 0.8s ease; }
 
@@ -149,7 +148,8 @@
     .mini-bar { flex: 1; border-radius: 2px 2px 0 0; min-height: 3px; transition: height 0.3s; }
 
     .incident-row {
-      display: flex;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
       align-items: center;
       gap: 10px;
       padding: 8px 0;
@@ -163,49 +163,54 @@
       padding: 2px 7px;
       border-radius: 4px;
       font-weight: 500;
+      white-space: nowrap;
     }
     .badge-ok { background: #0d2e1f; color: #22c55e; }
     .badge-cpu { background: #2d1f00; color: #f59e0b; }
     .badge-stop { background: #2d0f0f; color: #ef4444; }
 
-    .infra-row {
+    .infra-row,
+    .lambda-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 10px;
       padding: 7px 0;
       border-bottom: 1px solid #1e2433;
       font-size: 12px;
     }
-    .infra-row:last-child { border-bottom: none; }
-    .infra-id { font-size: 11px; color: #475569; font-family: monospace; margin-top: 2px; }
+    .infra-row:last-child,
+    .lambda-row:last-child { border-bottom: none; }
+    .infra-id { font-size: 11px; color: #64748b; font-family: monospace; margin-top: 2px; }
+    .lambda-name { font-family: monospace; color: #94a3b8; }
 
-    .pill { font-size: 10px; padding: 2px 8px; border-radius: 20px; }
+    .pill {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
     .pill-green { background: #0d2e1f; color: #22c55e; }
     .pill-blue { background: #0c1e3d; color: #60a5fa; }
 
-    .lambda-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 7px 0;
-      border-bottom: 1px solid #1e2433;
-      font-size: 12px;
+    .refresh-time {
+      font-size: 11px;
+      color: #64748b;
+      text-align: right;
+      margin-bottom: 12px;
     }
-    .lambda-row:last-child { border-bottom: none; }
-    .lambda-name { font-family: monospace; color: #94a3b8; }
-
-    .refresh-time { font-size: 11px; color: #334155; text-align: right; margin-bottom: 12px; }
 
     .section-head {
       font-size: 13px;
       font-weight: 500;
-      color: #64748b;
+      color: #94a3b8;
       margin-bottom: 12px;
       display: flex;
       align-items: center;
       gap: 6px;
     }
 
+    .muted { color: #64748b; }
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #1e2433; border-radius: 2px; }
@@ -217,8 +222,8 @@
   <div class="titlebar-dot dot-red"></div>
   <div class="titlebar-dot dot-yellow"></div>
   <div class="titlebar-dot dot-green"></div>
-  <span class="titlebar-title">cloud-governance-monitor — ap-southeast-1</span>
-  <span class="status-pill" id="system-status">● healthy</span>
+  <span class="titlebar-title">cloud-governance-monitor - ap-southeast-1</span>
+  <span class="status-pill" id="system-status">healthy</span>
 </div>
 
 <div class="content">
@@ -232,51 +237,52 @@
     <div class="sidebar-section">Automation</div>
     <div class="nav-item"><div class="nav-dot" style="background:#22c55e"></div> Self-Healing</div>
     <div class="nav-item"><div class="nav-dot" style="background:#f97316"></div> FinOps</div>
-    <div class="sidebar-section">Info</div>
+    <div class="sidebar-section">Backend</div>
     <div class="nav-item" style="margin-top:auto">
-      <div class="nav-dot" style="background:#475569"></div> 13.228.240.37
+      <div class="nav-dot" style="background:#475569"></div>
+      <span id="backend-url">loading...</span>
     </div>
   </div>
 
   <div class="main">
-    <div class="refresh-time" id="refresh-time">กำลังโหลด...</div>
+    <div class="refresh-time" id="refresh-time">Loading live data...</div>
 
     <div class="grid4">
       <div class="card">
-        <div class="card-label">system status</div>
+        <div class="card-label">System status</div>
         <div class="metric-big green" id="ec2-status">--</div>
         <div class="metric-sub">EC2 t3.micro</div>
       </div>
       <div class="card">
-        <div class="card-label">cpu usage</div>
+        <div class="card-label">CPU usage</div>
         <div class="metric-big" id="cpu-val">--</div>
-        <div class="metric-sub" id="cpu-sub">loading...</div>
+        <div class="metric-sub" id="cpu-sub">Loading...</div>
         <div class="bar-wrap">
           <div class="bar-track"><div class="bar-fill" id="cpu-bar" style="width:0%;background:#22c55e"></div></div>
         </div>
       </div>
       <div class="card">
-        <div class="card-label">auto-healed</div>
+        <div class="card-label">Auto-healed</div>
         <div class="metric-big blue" id="heal-count">--</div>
-        <div class="metric-sub">lambda invocations</div>
+        <div class="metric-sub">Lambda invocations</div>
       </div>
       <div class="card">
-        <div class="card-label">cost today</div>
+        <div class="card-label">Cost today</div>
         <div class="metric-big green">$0.00</div>
-        <div class="metric-sub green">free tier active</div>
+        <div class="metric-sub green">Free tier demo mode</div>
       </div>
     </div>
 
     <div class="grid2">
       <div class="card">
-        <div class="section-head">CPU — last readings</div>
+        <div class="section-head">CPU last readings</div>
         <div class="mini-chart" id="cpu-chart"></div>
         <div class="bar-wrap" style="margin-top:12px">
-          <div class="bar-label"><span>current</span><span id="cpu-pct2">0%</span></div>
+          <div class="bar-label"><span>Current</span><span id="cpu-pct2">0%</span></div>
           <div class="bar-track"><div class="bar-fill" id="cpu-bar2" style="width:0%;background:#22c55e"></div></div>
         </div>
         <div class="bar-wrap">
-          <div class="bar-label"><span>alarm threshold</span><span>70%</span></div>
+          <div class="bar-label"><span>Alarm threshold</span><span>70%</span></div>
           <div class="bar-track"><div class="bar-fill" style="width:70%;background:#f59e0b"></div></div>
         </div>
       </div>
@@ -284,18 +290,18 @@
         <div class="section-head">Lambda functions</div>
         <div class="lambda-row">
           <span class="lambda-name">self-healing</span>
-          <span>invocations: <span id="sh-inv" class="blue">--</span></span>
+          <span>Invocations: <span id="sh-inv" class="blue">--</span></span>
         </div>
         <div class="lambda-row">
           <span class="lambda-name">finops</span>
-          <span>invocations: <span id="fo-inv" class="blue">--</span></span>
+          <span>Invocations: <span id="fo-inv" class="blue">--</span></span>
         </div>
         <div class="bar-wrap" style="margin-top:12px">
-          <div class="bar-label"><span>self-healing health</span><span>100%</span></div>
+          <div class="bar-label"><span>Self-healing health</span><span>100%</span></div>
           <div class="bar-track"><div class="bar-fill" style="width:100%;background:#22c55e"></div></div>
         </div>
         <div class="bar-wrap">
-          <div class="bar-label"><span>finops health</span><span>100%</span></div>
+          <div class="bar-label"><span>FinOps health</span><span>100%</span></div>
           <div class="bar-track"><div class="bar-fill" style="width:100%;background:#60a5fa"></div></div>
         </div>
       </div>
@@ -307,14 +313,15 @@
         <div id="incident-list">
           <div class="incident-row">
             <span class="badge badge-ok">OK</span>
-            <span>กำลังโหลด...</span>
+            <span>Loading incidents...</span>
+            <span class="muted">DynamoDB</span>
           </div>
         </div>
       </div>
       <div class="card">
         <div class="section-head">Infrastructure</div>
         <div class="infra-row">
-          <div><div>cloud-governance-app</div><div class="infra-id">i-0327c7e7774cbc046 · t3.micro</div></div>
+          <div><div>cloud-governance-app</div><div class="infra-id">i-0327c7e7774cbc046 / t3.micro</div></div>
           <span class="pill pill-green" id="ec2-pill">--</span>
         </div>
         <div class="infra-row">
@@ -322,11 +329,11 @@
           <span class="pill pill-green">active</span>
         </div>
         <div class="infra-row">
-          <div><div>incident-log table</div><div class="infra-id">DynamoDB · PAY_PER_REQUEST</div></div>
+          <div><div>incident-log table</div><div class="infra-id">DynamoDB / PAY_PER_REQUEST</div></div>
           <span class="pill pill-green">active</span>
         </div>
         <div class="infra-row">
-          <div><div>13.228.240.37</div><div class="infra-id">Elastic IP · Flask :5000</div></div>
+          <div><div>13.228.240.37</div><div class="infra-id">Elastic IP / Flask :5000</div></div>
           <span class="pill pill-blue">public</span>
         </div>
       </div>
@@ -335,68 +342,104 @@
 </div>
 
 <script>
+const cloudApi = window.api || {
+  baseUrl: 'Electron preload unavailable',
+  getCpu: async () => ({ current: 0, history: [], status: 'offline' }),
+  getStatus: async () => ({ ec2: 'offline' }),
+  getLambdaStats: async () => ({ self_healing: { invocations: 0 }, finops: { invocations: 0 } }),
+  getIncidents: async () => ({ count: 0, incidents: [] })
+}
+
+document.getElementById('backend-url').textContent = cloudApi.baseUrl
+
+function setCpuState(cpuVal, status) {
+  const stateClass = cpuVal > 70 ? 'red' : cpuVal > 50 ? 'amber' : 'green'
+  const stateColor = cpuVal > 70 ? '#ef4444' : cpuVal > 50 ? '#f59e0b' : '#22c55e'
+
+  document.getElementById('cpu-val').textContent = cpuVal + '%'
+  document.getElementById('cpu-val').className = 'metric-big ' + stateClass
+  document.getElementById('cpu-sub').textContent = 'Status: ' + (status || 'ok')
+  document.getElementById('cpu-bar').style.width = cpuVal + '%'
+  document.getElementById('cpu-bar').style.background = stateColor
+  document.getElementById('cpu-pct2').textContent = cpuVal + '%'
+  document.getElementById('cpu-bar2').style.width = cpuVal + '%'
+  document.getElementById('cpu-bar2').style.background = stateColor
+}
+
+function renderCpuChart(history) {
+  const chart = document.getElementById('cpu-chart')
+  chart.innerHTML = ''
+  const points = history.length ? history : [0]
+  const max = Math.max(...points, 10)
+
+  points.forEach((value) => {
+    const bar = document.createElement('div')
+    bar.className = 'mini-bar'
+    bar.style.height = Math.max(3, Math.round((value / max) * 44)) + 'px'
+    bar.style.background = value > 70 ? '#ef4444' : value > 50 ? '#f59e0b' : '#22c55e'
+    chart.appendChild(bar)
+  })
+}
+
+function renderIncidents(incidents) {
+  const list = document.getElementById('incident-list')
+
+  if (!incidents.count) {
+    list.innerHTML = '<div class="incident-row"><span class="badge badge-ok">OK</span><span class="muted">No recent incidents</span><span class="muted">DynamoDB</span></div>'
+    return
+  }
+
+  list.innerHTML = incidents.incidents.slice(0, 5).map((incident) => {
+    const type = incident.incident_type || 'EVENT'
+    const badgeClass = type === 'HIGH_CPU' ? 'badge-cpu' : 'badge-stop'
+    const instanceId = incident.instance_id || 'unknown'
+    const action = incident.action_taken || 'recorded'
+
+    return `
+      <div class="incident-row">
+        <span class="badge ${badgeClass}">${type}</span>
+        <span>${instanceId}</span>
+        <span class="muted">${action}</span>
+      </div>
+    `
+  }).join('')
+}
+
 async function fetchAll() {
   try {
     const [cpu, status, lambda, incidents] = await Promise.all([
-      window.api.getCpu(),
-      window.api.getStatus(),
-      window.api.getLambdaStats(),
-      window.api.getIncidents()
+      cloudApi.getCpu(),
+      cloudApi.getStatus(),
+      cloudApi.getLambdaStats(),
+      cloudApi.getIncidents()
     ])
 
     const cpuVal = cpu.current || 0
-    document.getElementById('cpu-val').textContent = cpuVal + '%'
-    document.getElementById('cpu-val').className = 'metric-big ' + (cpuVal > 70 ? 'red' : cpuVal > 50 ? 'amber' : 'green')
-    document.getElementById('cpu-sub').textContent = 'status: ' + (cpu.status || 'ok')
-    document.getElementById('cpu-bar').style.width = cpuVal + '%'
-    document.getElementById('cpu-bar').style.background = cpuVal > 70 ? '#ef4444' : cpuVal > 50 ? '#f59e0b' : '#22c55e'
-    document.getElementById('cpu-pct2').textContent = cpuVal + '%'
-    document.getElementById('cpu-bar2').style.width = cpuVal + '%'
-    document.getElementById('cpu-bar2').style.background = cpuVal > 70 ? '#ef4444' : cpuVal > 50 ? '#f59e0b' : '#22c55e'
-
-    const history = cpu.history || []
-    const chart = document.getElementById('cpu-chart')
-    chart.innerHTML = ''
-    const max = Math.max(...history, 10)
-    history.forEach(v => {
-      const b = document.createElement('div')
-      b.className = 'mini-bar'
-      b.style.height = Math.round((v / max) * 44) + 'px'
-      b.style.background = v > 70 ? '#ef4444' : v > 50 ? '#f59e0b' : '#22c55e'
-      chart.appendChild(b)
-    })
+    setCpuState(cpuVal, cpu.status)
+    renderCpuChart(cpu.history || [])
 
     const ec2State = status.ec2 || 'unknown'
     document.getElementById('ec2-status').textContent = ec2State
     document.getElementById('ec2-status').className = 'metric-big ' + (ec2State === 'running' ? 'green' : 'red')
     document.getElementById('ec2-pill').textContent = ec2State
-    document.getElementById('system-status').textContent = ec2State === 'running' ? '● healthy' : '● error'
+    document.getElementById('system-status').textContent = ec2State === 'running' ? 'healthy' : 'attention needed'
     document.getElementById('system-status').style.color = ec2State === 'running' ? '#22c55e' : '#ef4444'
 
     document.getElementById('sh-inv').textContent = lambda.self_healing?.invocations ?? 0
     document.getElementById('fo-inv').textContent = lambda.finops?.invocations ?? 0
     document.getElementById('heal-count').textContent = lambda.self_healing?.invocations ?? 0
 
-    const list = document.getElementById('incident-list')
-    if (incidents.count === 0) {
-      list.innerHTML = '<div class="incident-row"><span class="badge badge-ok">OK</span><span style="color:#475569">ไม่มี incident</span></div>'
-    } else {
-      list.innerHTML = incidents.incidents.slice(0, 5).map(i => `
-        <div class="incident-row">
-          <span class="badge ${i.incident_type === 'HIGH_CPU' ? 'badge-cpu' : 'badge-stop'}">${i.incident_type}</span>
-          <span style="flex:1">${i.instance_id}</span>
-          <span style="color:#475569;font-size:11px">${i.action_taken}</span>
-        </div>
-      `).join('')
-    }
+    renderIncidents(incidents)
 
     const now = new Date()
     document.getElementById('refresh-time').textContent =
-      'อัพเดทล่าสุด ' + now.toLocaleTimeString('th-TH') + ' · refresh ทุก 30 วินาที'
-
+      'Last updated ' + now.toLocaleTimeString() + ' / refresh every 30 seconds'
   } catch (err) {
     document.getElementById('ec2-status').textContent = 'error'
     document.getElementById('ec2-status').className = 'metric-big red'
+    document.getElementById('system-status').textContent = 'connection error'
+    document.getElementById('system-status').style.color = '#ef4444'
+    document.getElementById('refresh-time').textContent = 'Unable to reach backend: ' + err.message
     console.error(err)
   }
 }

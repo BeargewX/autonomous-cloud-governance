@@ -1,10 +1,12 @@
-const { app, BrowserWindow, ipcMain } = require('electron')
+const { app, BrowserWindow } = require('electron')
 const path = require('path')
+const fs = require('fs')
 
 let mainWindow
 
 function createWindow() {
-  mainWindow = new BrowserWindow({
+  const iconPath = path.join(__dirname, 'assets/icon.png')
+  const windowOptions = {
     width: 1200,
     height: 800,
     minWidth: 900,
@@ -16,10 +18,14 @@ function createWindow() {
       contextIsolation: true,
       webSecurity: false,
       preload: path.join(__dirname, 'preload.js')
-    },
-    icon: path.join(__dirname, 'assets/icon.png')
-  })
+    }
+  }
 
+  if (fs.existsSync(iconPath)) {
+    windowOptions.icon = iconPath
+  }
+
+  mainWindow = new BrowserWindow(windowOptions)
   mainWindow.loadFile('index.html')
   mainWindow.setTitle('Cloud Governance Monitor')
 }
