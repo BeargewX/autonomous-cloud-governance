@@ -74,6 +74,6 @@ contextBridge.exposeInMainWorld('api', {
   getSecurityRisks: () => getJson('/api/security-risks'),
   getRunbooks: () => getJson('/api/runbooks'),
   getTopology: () => getJson('/api/topology'),
-  getEvidenceReport: () => getJson('/api/evidence-report')
+  getEvidenceReport: () => getJson('/api/evidence-report'),
   openExternal: (url) => shell.openExternal(url)
 })
