@@ -1,4 +1,4 @@
-const { contextBridge } = require('electron')
+const { contextBridge, shell } = require('electron')
 const fs = require('fs')
 const path = require('path')
 
@@ -8,7 +8,8 @@ const DEFAULT_CONFIG = {
   instanceId: null,
   vpcId: null,
   publicEndpoint: null,
-  refreshIntervalMs: 60000
+  refreshIntervalMs: 60000,
+  apiKey: ''
 }
 
 function readJsonIfExists(filePath) {
@@ -30,13 +31,22 @@ function loadConfig() {
     config.baseUrl = process.env.DASHBOARD_BASE_URL
   }
 
+  if (process.env.DASHBOARD_API_KEY) {
+    config.apiKey = process.env.DASHBOARD_API_KEY
+  }
+
   return config
 }
 
 const CONFIG = loadConfig()
 
 async function getJson(apiPath) {
-  const res = await fetch(`${CONFIG.baseUrl}${apiPath}`)
+  const headers = {}
+  if (CONFIG.apiKey) {
+    headers['X-API-Key'] = CONFIG.apiKey
+  }
+
+  const res = await fetch(`${CONFIG.baseUrl}${apiPath}`, { headers })
 
   if (!res.ok) {
     throw new Error(`Request failed: ${res.status} ${res.statusText}`)
@@ -65,4 +75,5 @@ contextBridge.exposeInMainWorld('api', {
   getRunbooks: () => getJson('/api/runbooks'),
   getTopology: () => getJson('/api/topology'),
   getEvidenceReport: () => getJson('/api/evidence-report')
+  openExternal: (url) => shell.openExternal(url)
 })
